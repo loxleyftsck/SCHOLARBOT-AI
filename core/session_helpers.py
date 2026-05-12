@@ -329,13 +329,15 @@ def extract_topic(text: str) -> str | None:
 def call_llama(user_msg: str, personality_key: str, user_name: str,
                topics: list[str], conversation_history: list[dict],
                current_context: str = "", last_question: str = "",
-               last_answer: str = "") -> str:
+               last_answer: str = "", retrieved_chunks: list = None) -> str:
     """High-level convenience function: build messages + call Groq.
 
     Detects short follow-up commands and expands them with conversation context.
     Auto-detects quiz requests and sets current_context="quiz".
+    v3: Optional RAG context injection via retrieved_chunks.
     """
     from core.llm_client import chat
+    from core.rag_context import build_rag_system_prompt, should_use_rag
 
     # Check if message is a short follow-up command
     intent = detect_intent(user_msg.lower().strip())
@@ -352,11 +354,24 @@ def call_llama(user_msg: str, personality_key: str, user_name: str,
     if is_quiz_request(user_msg):
         detected_context = "quiz"
 
-    messages = build_messages(
-        personality_key, user_name, topics, conversation_history,
+    # Build base system prompt
+    base_system_prompt = build_system_prompt(
+        personality_key, user_name, topics,
         current_context=detected_context,
         last_question=last_question
     )
+
+    # v3 RAG: Inject document context if available and relevant
+    retrieved_chunks = retrieved_chunks or []
+    if retrieved_chunks and should_use_rag(user_msg, has_documents=True):
+        system_content = build_rag_system_prompt(base_system_prompt, retrieved_chunks, detected_context)
+    else:
+        system_content = base_system_prompt
+
+    messages = [{"role": "system", "content": system_content}]
+    for m in conversation_history:
+        role = "user" if m["role"] == "user" else "assistant"
+        messages.append({"role": role, "content": m["content"]})
     # Add user message (effective_msg may be expanded for short commands)
     messages.append({"role": "user", "content": effective_msg})
 

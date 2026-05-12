@@ -19,8 +19,13 @@ SESSION_DEFAULTS = {
     # Conversation context tracking
     "last_question": "",      # Last question generated (for quiz mode)
     "last_answer": "",        # Last answer provided
-    "current_context": "",    # Current active context ("quiz", "tutor", "mindmap", "")
+    "current_context": "",    # Current active context ("quiz", "tutor", "")
     "awaiting_followup": False,  # Is user expected to respond with command?
+    # v3 RAG fields
+    "uploaded_docs": [],      # List of {"filename": str, "size": int, "type": str}
+    "doc_texts": [],         # List of raw extracted text per doc
+    "doc_chunks": [],         # List of {"content": str, "source": str, "index": int}
+    "last_retrieved": [],     # Last retrieved RetrievedChunk list (for UI feedback)
 }
 
 # Memory display wants a capped view of topics
@@ -104,15 +109,33 @@ def reset_chat(state: dict) -> dict:
         "topics_discussed": [],
         "msg_count": 0,
         "active_mode": None,
-        # Clear context on chat reset
+        # Clear conversation context
         "last_question": "",
         "last_answer": "",
         "current_context": "",
         "awaiting_followup": False,
+        # Keep RAG docs — user may want to ask about same material
+        # last_retrieved is cleared per conversation
+        "last_retrieved": [],
     }
 
 
 # ─── Memory Display (pure HTML builder) ───────────────────────────────────────
+
+def reset_rag_docs(state: dict) -> dict:
+    """Clear all RAG document state.
+
+    Called when user explicitly clears uploaded documents.
+    Returns a shallow copy of state with RAG fields reset.
+    """
+    return {
+        **state,
+        "uploaded_docs": [],
+        "doc_texts": [],
+        "doc_chunks": [],
+        "last_retrieved": [],
+    }
+
 
 def build_memory_card_html(state: dict) -> str:
     """Build the sidebar memory card HTML from session state dict.
@@ -174,6 +197,18 @@ def build_memory_card_html(state: dict) -> str:
             f'<div class="memory-item">'
             f'<div class="memory-dot" style="background:#f6e05e"></div>'
             f'<span>Mode: <b>{ctx_label}</b></span>'
+            f'</div>'
+        )
+
+    # v3 RAG: show uploaded document summary
+    uploaded_docs = state.get("uploaded_docs", [])
+    if uploaded_docs:
+        doc_names = ", ".join(d["filename"] for d in uploaded_docs[:3])
+        extra = "..." if len(uploaded_docs) > 3 else ""
+        html += (
+            f'<div class="memory-item">'
+            f'<div class="memory-dot" style="background:#68d391"></div>'
+            f'<span>📄 {len(uploaded_docs)} dokumen</span>'
             f'</div>'
         )
 

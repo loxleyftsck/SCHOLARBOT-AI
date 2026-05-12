@@ -1,6 +1,7 @@
-# 🎓 ScholarBot AI — Intelligent Study Assistant
+# 🎓 ScholarBot AI v3 — Lightweight RAG Edition
 
-> **AI-powered study companion** berbasis Groq + Llama 3.3 70B dengan conversational memory, personality modes, dan specialized learning features.
+> **AI-powered educational chatbot** dengan kemampuan **Document-Based RAG** yang ringan dan efisien.
+> Berbasis **Groq API + Llama 3.3 70B** dengan modular architecture, personality modes, conversational memory, dan fitur RAG untuk menjawab pertanyaan berdasarkan materi yang di-upload.
 
 <!-- Screenshot Placeholder — Add screenshots/main.png, screenshots/chat.png, screenshots/features.png -->
 
@@ -8,7 +9,9 @@
 
 ## 📌 Deskripsi Project
 
-**ScholarBot AI** adalah chatbot edukasi cerdas yang dirancang untuk membantu siswa dan mahasiswa dalam proses belajar. Dibangun dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama 3.3 70B Versatile, ScholarBot mampu memberikan penjelasan materi, membuat rangkuman, menghasilkan soal latihan, dan merekomendasikan jalur belajar — semua dalam satu antarmuka Streamlit yang intuitif.
+**ScholarBot AI v3** adalah chatbot edukasi yang ditingkatkan dengan fitur **RAG (Retrieval-Augmented Generation)**. Dengan upload materi belajar (.txt / .pdf), ScholarBot dapat mengambil konteks relevan dari dokumen untuk memberikan jawaban yang lebih akurat dan kontekstual.
+
+Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama 3.3 70B Versatile (~8000 tok/s). ScholarBot memberikan penjelasan materi, membuat rangkuman, menghasilkan soal latihan, dan merekomendasikan jalur belajar — semua dalam satu antarmuka Streamlit yang intuitif.
 
 ---
 
@@ -16,10 +19,11 @@
 
 ### 🤖 AI Core
 | Fitur | Deskripsi |
-|-------|-----------|
+|--------|-----------|
 | **LLM Integration** | Groq API + Llama 3.3 70B Versatile (~8000 tok/s) |
 | **Context-Aware Response** | Memahami konteks percakapan multi-turn secara akurat |
 | **Prompt Engineering** | System prompt yang dioptimalkan untuk domain edukasi |
+| **RAG Pipeline** | Document retrieval tanpa vector database (keyword-based) |
 
 ### 🎭 Personality Modes (4 Mode)
 | Mode | Karakter |
@@ -32,8 +36,19 @@
 ### 🧠 Conversational Memory
 - Mengingat **nama user** di seluruh sesi
 - Melacak **topik yang sudah dibahas**
-- Menyebut nama & riwayat topik dalam respons (context-aware)
+- Menyimpan **nama & riwayat topik** dalam respons (context-aware)
 - Menampilkan **Memory Panel** real-time di sidebar
+- Menyimpan **history percakapan** untuk kelanjutan sesi
+
+### 🎓 RAG Features (v3 Baru)
+| Fitur | Deskripsi |
+|--------|-----------|
+| **📄 Upload Dokumen** | Upload .txt atau .pdf dari sidebar |
+| **📖 Ekstraksi Teks** | Ekstraksi otomatis dari PDF (pypdf) dan TXT |
+| **✂️ Chunking** | Pecah teks menjadi bagian relevan (paragraph/sentence) |
+| **🔍 Retrieval** | Keyword matching dengan scoring tanpa embedding |
+| **📌 Context Injection** | Mengambil konteks dokumen ke prompt |
+| **💡 Lightweight** | Tidak ada vector DB, tidak ada LangChain — cepat |
 
 ### ⚡ Learning Modes (5 Mode Belajar)
 | Mode | Fungsi |
@@ -41,7 +56,7 @@
 | 📚 **Tutor Mode** | Penjelasan konsep mendalam |
 | ✍️ **Rangkum Materi** | Summarisasi ke poin penting |
 | 🧪 **Quiz Generator** | Buat soal latihan otomatis |
-| 🗺️ **Mind Map** | Outline & struktur materi |
+| 🗺️ **Mind Map** | Buat outline & struktur materi |
 | 💡 **Rekomendasi Belajar** | Roadmap belajar personal |
 
 ---
@@ -49,168 +64,389 @@
 ## 🏗️ Arsitektur Sistem
 
 ```
-User Input (Streamlit UI)
-        │
-        ▼
- ┌─────────────────┐
- │  Session State  │  ← Conversational Memory
- │  (nama, topik)  │
- └────────┬────────┘
-          │
-          ▼
- ┌─────────────────┐
- │  System Prompt  │  ← Prompt Engineering
- │  Builder        │     (personality + memory)
- └────────┬────────┘
-          │
-          ▼
- ┌─────────────────┐
- │  Groq API +     │  ← LLM-based NLP System
- │  Llama 3.3 70B  │
- └────────┬────────┘
-          │
-          ▼
- ┌─────────────────┐
- │  Response       │  ← AI Agent Behavior
- │  Processing     │
- └────────┬────────┘
-          │
-          ▼
-   Streamlit UI (Chat Render)
-```
-
----
-
-## 🚀 Cara Menjalankan
-
-### 1. Clone Repository
-```bash
-git clone https://github.com/username/scholarbot-ai.git
-cd scholarbot-ai
-```
-
-### 2. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Setup API Key (GRATIS!)
-1. Buka **[console.groq.com/keys](https://console.groq.com/keys)**
-2. Login (gratis — pakai Google/GitHub)
-3. Klik **"Create API Key"**
-4. Copy key dan paste ke file `.env`
-
-```bash
-# Copy file template
-cp .env.example .env
-
-# Edit dan masukkan Groq API key kamu
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-> 💡 **Alternatif:** Masukkan API key langsung di sidebar aplikasi tanpa file `.env`
-
-### 4. Jalankan Aplikasi
-```bash
-streamlit run app.py
-```
-
-Buka browser di `http://localhost:8501` 🎉
-
----
-
-## 📁 Struktur Folder
-
-```
-scholarbot-ai/
-│
-├── app.py              # Main application (Streamlit + Groq/Llama)
-├── requirements.txt    # Python dependencies
-├── .env.example        # Template environment variables
-├── .env                # API key (jangan di-commit!)
-├── README.md           # Dokumentasi ini
-├── .gitignore          # Exclude .env dan cache
-│
-└── screenshots/
-    ├── main.png        # Halaman utama
-    ├── chat.png        # Contoh percakapan
-    └── features.png    # Fitur unik
+┌─────────────────────────────────────────────────────────────────────┐
+│                                                             │
+│  ┌─────────────────────────────────────────────────────────────┐   │
+│  │                   Streamlit UI                         │   │
+│  │    ┌──────────┐                                      │   │
+│  │    │  Sidebar  │      Chat Input                   │   │
+│  │    │  │   ┌──────┴──────┐                    │   │
+│  │    │  ├─ Upload  │   Messages │                       │   │
+│  │    │  ├─ Person-│   ──────>                         │   │
+│  │    │  │  ality   │   Groq API                          │   │
+│  │    │  └────────┘    (Llama 3.3)                       │   │
+│  │    └──────────┘                  │   Response  │   │
+│  │        │                                   ──────>            │   │
+│  └──────────────────────────────────────────────┐│
+│                                             │   │
+│  ┌────────────────────────────────────┐         │
+│  │       Core Modules              │         │
+│  │  ┌────────────────────────────┐  │         │
+│  │  │ Prompt Building         │         │
+│  │  ├─ System Prompt         │         │
+│  │  ├─ RAG Context        │         │
+│  │  ├─ Message Assembly     │         │
+│  │  └─ Intent Detection     │         │
+│  │  ┌────────────────────┐  │         │
+│  │  │  Services Layer    │         │
+│  │  │  ├─ Doc Loader       │         │
+│  │  │  ├─ Chunker         │         │
+│  │  │  └─ Retriever       │         │
+│  │  └────────────────────┘  │         │
+│  └────────────────────────────┘         │
+│                                             │
+│  ┌────────────────────────────────────┐         │
+│  │       Storage Layer              │         │
+│  │  ├─ JSON Persistence        │         │
+│  │  └─ Session Management      │         │
+│  └────────────────────────────────────┘         │
+│                                             │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| **Frontend/UI** | Streamlit 1.35+ |
-| **AI Model** | Llama 3.3 70B Versatile (via Groq API) |
-| **AI SDK** | `groq` SDK |
-| **Config** | `python-dotenv` |
-| **Language** | Python 3.10+ |
+| Komponen | Teknologi | Deskripsi |
+|-----------|----------|---------|
+| **Frontend** | Streamlit 1.35+ | UI framework untuk aplikasi Python |
+| **AI Backend** | Groq API | LLM inference API (Llama 3.3 70B) |
+| **LLM Model** | Llama 3.3 70B Versatile | Context window 128k tok |
+| **Doc Processing** | pypdf | PDF text extraction |
+| **Chunking** | Native Python | Paragraph & fixed-size splitting |
+| **Retrieval** | Keyword matching + TF scoring | Tidak ada vector DB |
+| **Persistence** | JSON file-based | Session storage di `storage/data/sessions/` |
+| **Env Mgmt** | python-dotenv | Configuration via environment variables |
 
 ---
 
-## 💡 Konsep Teknis
+## 📦 Struktur Project
 
-### Prompt Engineering
-System prompt dibangun secara dinamis berdasarkan:
-- Pilihan personality mode user
-- Nama user yang tersimpan di session
-- Riwayat topik yang sudah dibahas
-- Konteks mode belajar aktif
-
-### Conversational Memory
-Menggunakan **Streamlit Session State** sebagai in-memory store:
-```python
-st.session_state.user_name        # Nama user
-st.session_state.topics_discussed  # List topik
-st.session_state.messages          # History chat
+```
+scholarbot/
+│
+├── app.py                       # Main Streamlit application
+├── requirements.txt               # Python dependencies
+├── README.md                     # Dokumentasi project
+├── .env                         # API key (tidak ikut git)
+├── .env.example                  # Template .env (untuk commit)
+│
+├── config/
+│   ├── __init__.py
+│   └── settings.py           # Konfigurasi aplikasi
+│
+├── core/
+│   ├── __init__.py           # Ekspor modul core
+│   ├── llm_client.py          # Abstraksi Groq API
+│   ├── session_helpers.py      # Prompt builder, intent detection
+│   ├── memory_manager.py       # Schema session state, mutations
+│   └── rag_context.py          # RAG context injection (v3)
+│
+├── prompts/
+│   ├── __init__.py
+│   ├── personalities.py        # 4 mode personality system prompts
+│   └── templates.py           # 5 learning mode templates
+│
+├── services/
+│   ├── __init__.py           # Ekspor modul services
+│   ├── document_loader.py      # TXT/PDF extraction (v3)
+│   ├── chunker.py             # Text chunking (v3)
+│   └── retriever.py           # Keyword-based retrieval (v3)
+│
+├── ui/
+│   ├── __init__.py
+│   ├── sidebar.py              # Konfigurasi sidebar
+│   ├── uploader.py             # RAG uploader UI (v3)
+│   └── styles.py              # Custom CSS untuk UI
+│
+├── utils/
+│   ├── __init__.py
+│   ├── token_counter.py       # Estimasi token & manajemen konteks
+│   └── validators.py          # Validasi input & API key format
+│
+├── storage/
+│   ├── __init__.py
+│   └── json_store.py          # JSON file persistence
+│
+└── assets/
+    └── Logo.png               # Logo aplikasi
 ```
 
-### AI Agent Behavior
-ScholarBot berperilaku sebagai agen edukasi dengan:
-- **Goal-oriented responses**: Selalu mengarah pada pemahaman user
-- **Domain specialization**: Fokus pada konteks belajar dan edukasi
-- **Adaptive tone**: Menyesuaikan gaya bahasa dengan personality mode
-- **Context retention**: Menyambungkan topik antar percakapan
+---
 
-### Streaming & Performance
-Groq API menyediakan inference speed ~8000 tokens/detik, jauh lebih cepat dari provider lain di tier yang sama, menjadikan pengalaman chat terasa natural dan responsif.
+## 🚀 Cara Menjalankan
+
+### Prasyarat
+- Python 3.11+
+- Internet koneksi (untuk Groq API)
+- Groq API Key (dapatkan gratis di [console.groq.com/keys](https://console.groq.com/keys))
+
+### Langkah-Langkah
+
+1. **Clone repository**
+   ```bash
+   git clone https://github.com/loxleyftsck/SCHOLARBOT-AI.git
+   cd scholarbot
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Setup environment**
+   ```bash
+   cp .env.example .env
+   # Edit .env dan tambahkan API key Groq:
+   # GROQ_API_KEY=gsk_your_key_here
+   ```
+
+4. **Jalankan aplikasi**
+   ```bash
+   streamlit run app.py
+   ```
+
+5. **Buka browser**
+   ```
+   http://localhost:8501
+   ```
 
 ---
 
-## 📸 Screenshots
+## 🔧 Konfigurasi
 
-Ambil screenshot aplikasi dengan cara:
-```bash
-# Jalankan app
-streamlit run app.py
+| Environment Variable | Deskripsi |
+|-------------------|-----------|
+| `GROQ_API_KEY` | Groq API Key (wajib untuk fitur AI) |
+| `MODEL_NAME` | Nama model (default: llama-3.3-70b-versatile) |
+| `MODEL_TEMPERATURE` | Temperature sampling (default: 0.7) |
+| `MODEL_MAX_TOKENS` | Max token per response (default: 2048) |
+| `APP_TITLE` | Judul aplikasi |
+| `APP_LAYOUT` | Tampilan layout (default: "wide") |
+| `APP_SIDEBAR_STATE` | Sidebar state (default: "expanded") |
 
-# Screenshot browser di http://localhost:8501
-# Simpan ke folder screenshots/ dengan nama:
-#   - main.png       → Halaman utama
-#   - chat.png       → Contoh percakapan
-#   - features.png   → Mode Belajar / Quiz
+---
+
+## 📊 RAG Pipeline (v3)
+
+### Alur Dokumen → Jawaban
+
+```
+User Upload (.txt / .pdf)
+        │
+        ▼
+services/document_loader.py
+        │
+        ├── extract_txt(file_bytes)  → plain text
+        └── extract_pdf(file_bytes)  → plain text
+        │
+        ▼
+services/chunker.py
+        │
+        └── chunk_text(text)  → List[Chunk]
+            │   - paragraph-based untuk dokumen terstruktur
+            │   - size-based untuk teks panjang
+        │
+        ▼
+services/retriever.py
+        │
+        └── retrieve(query, chunks, top_k=3)  → List[RetrievedChunk]
+            │   - Keyword overlap scoring
+            │   - TF (term frequency) boost
+            │   - Length density penalty
+        │
+        ▼
+core/rag_context.py
+        │
+        └── build_rag_system_prompt(...)  → system prompt + RAG instruction
+        │
+        ▼
+core/session_helpers.py
+        │
+        └── call_llama(...)  → send ke Groq API
+            │   - Menginject konteks dokumen
+            │   - Mempertahankan konteks percakapan
+        │
+        ▼
+Llama 3.3 70B (Groq API)
+        │
+        ▼
+Response → User
 ```
 
-| Halaman Utama | Percakapan | Mode Quiz |
-|:---:|:---:|:---:|
-| *(tambah main.png)* | *(tambah chat.png)* | *(tambah features.png)* |
+### Pengambilan Keputusan Retrieval
+
+**Mengapa Keyword Bukan Vector Database?**
+
+1. **Ringan** — Tidak ada embedding yang komputasi, retrieval cepat
+2. **Edukasi** — Materi sekolah sering struktur, keyword matching efektif
+3. **Demokratis** — Tidak ada infrastructure tambahan untuk deployment
+4. **Efisiensi** — Keyword scoring O(n*m) vs vector search O(n log m)
+5. **Transparan** — Mudah dimengerti algoritmanya untuk debugging
 
 ---
 
-## 👨‍💻 Developer
+## 📖 Fitur Detail
 
-Dibuat sebagai **Final Project AI Chatbot Application**
+### Context Tracking
 
-- Framework: Streamlit
-- Model: Llama 3.3 70B Versatile (via Groq API)
-- Kategori: Education Tutor Bot
-- API Provider: Groq (Free Tier)
+ScholarBot memahami hubungan antar pesan dengan:
+
+- **Konteks percakapan** — "Buat soal" → "Jawab" → menjawab soal yang benar
+- **Referensi implicit** — "Bahaskan" → menjelaskan pembahasan soal terakhir
+- **RAG awareness** — Saat dokumen di-upload, jawaban mengutamakan materi
+
+### Document Handling
+
+- **TXT upload** — Encoding otomatis (UTF-8, Latin-1, CP1252)
+- **PDF upload** — Ekstraksi teks dari halaman menggunakan pypdf
+- **Chunking strategy** — Auto-detect paragraph vs size-based chunking
+- **Multi-document** — Upload hingga 5 dokumen sekaligus
+- **Clear dokumen** — Hapus semua materi dari session
+
+### Error Handling
+
+- **Upload failure** — Pesan error jelas untuk user
+- **Document parse error** — Handle PDF rusak atau tidak terbaca
+- **Retrieval fallback** — Jika tidak ada konteks relevan, gunakan pengetahuan umum
 
 ---
 
-## 📄 License
+## 🔄 Roadmap
 
-MIT License — Free to use and modify.
+### v3.1 — Stabilization (Current)
+- ✅ Document upload (.txt, .pdf)
+- ✅ Text extraction (UTF-8, pypdf)
+- ✅ Paragraph & size chunking
+- ✅ Keyword-based retrieval
+- ✅ RAG context injection
+
+### v3.2 — Enhancement (Future)
+- [ ] Multi-document retrieval (cross-document scoring)
+- [ ] Better chunking strategies (semantic boundary detection)
+- [ ] Document summarization sebelum chunking
+- [ ] Re-ranking dengan lebih banyak faktor
+- [ ] UI: preview dokumen yang di-upload
+- [ ] UI: search dalam dokumen
+
+### v4.0 — Future (Not Planned)
+- [ ] Vector database (Chroma, FAISS) untuk semantic search
+- [ ] Multi-modal (gambar, audio, video)
+- [ ] Citations dengan inline reference
+- [ ] Export chat sebagai PDF/Word
+- [ ] Real-time collaboration (multi-user sessions)
+
+---
+
+## 🧪 Use Case — Belajar Dengan RAG
+
+### Scenario 1: Belajar Materi Sekolah
+```
+User: Upload "rangkuman_ekonomi.pdf"
+Bot: 📄 1 dokumen loaded (rangkuman_ekonomi.pdf)
+
+User: "Apa itu elastisitas?"
+Bot: [RAG] Menemukan 3 bagian dari rangkuman_ekonomi.pdf
+    Elastisitas adalah kemampuan permintaan dan penawaran...
+    Berdasarkan materi di atas, elastisitas adalah...
+
+User: "Berikan contohnya"
+Bot: [RAG] Menemukan 3 bagian dari rangkuman_ekonomi.pdf
+    Contoh elastisitas dalam materi...
+```
+
+### Scenario 2: Membuat Soal dari Materi
+```
+User: Upload "notes_biology.txt"
+Bot: 📄 1 dokumen loaded (notes_biology.txt)
+
+User: "Buat 5 soal tentang sistem pernapasan"
+Bot: [RAG] Berdasarkan notes_biology.txt dan soal di atas...
+    Soal 1: Apa fungsi utama sistem pernapasan?
+    [Dokumen notes_biology.txt]
+    Berdasarkan materi di atas, sistem pernapasan adalah...
+    Soal 2: [Dokumen notes_biology.txt]
+    ...
+```
+
+### Scenario 3: Diskusi Interaktif
+```
+User: Upload "ringkasan_ppt.pdf"
+Bot: 📄 1 dokumen loaded (ringkasan_ppt.pdf)
+
+User: "Jelaskan tentang slide 3-5"
+Bot: [RAG] Menemukan 3 bagian dari ringkasan_ppt.pdf
+    [Dokumen ringkasan_ppt.pdf] Slide 3-5 membahas tentang...
+
+User: "Bagaimana keterkaitannya dengan slide 6-8?"
+Bot: [RAG] Menemukan 3 bagian dari ringkasan_ppt.pdf
+    [Dokumen ringkasan_ppt.pdf] Tidak menemukan tentang slide 6-8
+    dalam materi yang di-upload, hanya terdapat slide 1-5.
+    Mungkin maksud Anda slide lanjutan atau bukan bagian presentasi ini?
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Upload Dokumen Gagal
+```
+Masalah: File tidak mau di-upload
+Solusi: Cek tipe file (.txt atau .pdf), ukuran maksimal 10MB
+```
+
+### PDF Tidak Bisa Dibaca
+```
+Masalah: "Gagal ekstrak PDF" atau "PDF tidak memiliki teks"
+Solusi: Pastikan bukan scanned PDF (hanya gambar). Gunakan PDF yang
+         searchable text.
+```
+
+### Tidak Ada Jawaban dari Dokumen
+```
+Masalah: "Bot memberikan jawaban generik" / "Saya tidak tahu"
+Solusi: Cek apakah dokumen benar-benar berisi materi yang relevan.
+         Coba gunakan keyword yang lebih spesifik saat bertanya.
+```
+
+### Token Limit Exceeded
+```
+Masalah: Pesan error tentang token limit
+Solusi: Hapus beberapa pesan lama (Reset Chat)
+         atau hapus dokumen besar untuk menghemat konteks.
+```
+
+---
+
+## 📄 API Key (Groq)
+
+Dapatkan API key gratis di: [console.groq.com/keys](https://console.groq.com/keys)
+
+**Catatan Keamanan:**
+- Jangan pernah commit `.env` file yang berisi API key nyata
+- Gunakan `.env.example` sebagai template untuk commit
+- API key disimpan secara lokal saja, tidak dikirim ke server
+
+---
+
+## 📚 Referensi
+
+- [Groq API Documentation](https://console.groq.com/docs/quickstart)
+- [Llama 3.3 Model Card](https://llama.meta.com/)
+- [Streamlit Documentation](https://docs.streamlit.io/)
+- [PyPDF2 Documentation](https://pypdf.readthedocs.io/)
+
+---
+
+## 📜 License
+
+Project ini untuk tujuan edukasi dan pembelajaran.
+
+Dibuat dengan 💜 untuk komunitas belajar Indonesia.
+
+---
+
+**Versi:** v3.1 (Lightweight RAG Edition)
+**Tanggal:** Mei 2026
+**Status:** ✅ Production-Ready
