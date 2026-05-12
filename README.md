@@ -134,7 +134,7 @@ ScholarBot AI dirancang untuk membuat proses belajar terasa lebih natural dan ef
 
 **Memahami dengan Cara Sendiri** — Kamu bisa tanya pakai bahasa sehari-hari, tanpa harus rumusin pertanyaan dalam format akademis. объясняет materi pakai kata-kata yang kamu pahami, bukan definisi dari kamus.
 
-**Latihan Tanpa Batas** — Butuh tambahan soal untuk persiapan ujian? ScholarBot bisa generate soal pilihan ganda atau essay tentang topik yang kamu指定, lengkap dengan kunci jawaban dan pembahasan.
+**Latihan Tanpa Batas** — Butuh tambahan soal untuk persiapan ujian? ScholarBot bisa generate soal pilihan ganda atau essay tentang topik yang kamu tentukan , lengkap dengan kunci jawaban dan pembahasan.
 
 **Belajar dari Materimu Sendiri** — Upload rangkuman, catatan, slide, atau e-book dalam format TXT atau PDF. ScholarBot akan membaca dokumen tersebut dan menjawab pertanyaan berdasarkan isi materimu — bukan dari pengetahuan generik internet.
 
