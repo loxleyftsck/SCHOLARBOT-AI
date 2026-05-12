@@ -132,7 +132,7 @@ ScholarBot bukan pengganti guru atau buku. Tapi bisa jadi companion yang selalu 
 
 ScholarBot AI dirancang untuk membuat proses belajar terasa lebih natural dan efektif.
 
-**Memahami dengan Cara Sendiri** — Kamu bisa tanya pakai bahasa sehari-hari, tanpa harus rumusin pertanyaan dalam format akademis. объясняет materi pakai kata-kata yang kamu pahami, bukan definisi dari kamus.
+**Memahami dengan Cara Sendiri** — Kamu bisa bertanya dengan bahasa sehari-hari tanpa harus menyusun pertanyaan dalam format akademis. ScholarBot menjelaskan materi dengan kata-kata yang mudah dipahami, bukan sekadar definisi dari kamus.
 
 **Latihan Tanpa Batas** — Butuh tambahan soal untuk persiapan ujian? ScholarBot bisa generate soal pilihan ganda atau essay tentang topik yang kamu tentukan , lengkap dengan kunci jawaban dan pembahasan.
 
