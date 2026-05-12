@@ -63,46 +63,52 @@ Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama
 
 ## 🏗️ Arsitektur Sistem
 
+```mermaid
+flowchart LR
+    subgraph UI["📱 Streamlit UI"]
+        S["Sidebar\n- Upload Dokumen\n- Personality\n- Memory Card"]
+        C["Chat Area\n- Messages\n- Input"]
+    end
+
+    subgraph Core["⚙️ Core Layer"]
+        PB["Prompt Builder\n- System Prompt\n- RAG Context\n- Conversation Rules"]
+        MA["Message Assembler\n- History\n- Context Injection"]
+        ID["Intent Detector\n- Short Commands\n- Quiz Mode"]
+    end
+
+    subgraph Services["🔧 Services Layer"]
+        DL["Document Loader\n- extract_txt()\n- extract_pdf()"]
+        CK["Chunker\n- chunk_by_paragraph()\n- chunk_by_size()"]
+        RT["Retriever\n- retrieve()\n- TF Scoring"]
+    end
+
+    subgraph Storage["💾 Storage Layer"]
+        JS["JSON Store\n- Session persistence\n- Profile storage"]
+        SS["Session State\n- messages\n- doc_chunks"]
+    end
+
+    subgraph LLM["🤖 Groq API"]
+        G["Groq API\nLlama 3.3 70B"]
+    end
+
+    S -->|"file upload"| Services
+    C -->|"user message"| Core
+    Core --> PB --> MA
+    Services -->|"retrieved chunks"| PB
+    MA -->|"messages + context"| G
+    G -->|"response"| C
+    Storage -->|"load/save"| Core
+    Storage -->|"persist"| JS
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                                                             │
-│  ┌─────────────────────────────────────────────────────────────┐   │
-│  │                   Streamlit UI                         │   │
-│  │    ┌──────────┐                                      │   │
-│  │    │  Sidebar  │      Chat Input                   │   │
-│  │    │  │   ┌──────┴──────┐                    │   │
-│  │    │  ├─ Upload  │   Messages │                       │   │
-│  │    │  ├─ Person-│   ──────>                         │   │
-│  │    │  │  ality   │   Groq API                          │   │
-│  │    │  └────────┘    (Llama 3.3)                       │   │
-│  │    └──────────┘                  │   Response  │   │
-│  │        │                                   ──────>            │   │
-│  └──────────────────────────────────────────────┐│
-│                                             │   │
-│  ┌────────────────────────────────────┐         │
-│  │       Core Modules              │         │
-│  │  ┌────────────────────────────┐  │         │
-│  │  │ Prompt Building         │         │
-│  │  ├─ System Prompt         │         │
-│  │  ├─ RAG Context        │         │
-│  │  ├─ Message Assembly     │         │
-│  │  └─ Intent Detection     │         │
-│  │  ┌────────────────────┐  │         │
-│  │  │  Services Layer    │         │
-│  │  │  ├─ Doc Loader       │         │
-│  │  │  ├─ Chunker         │         │
-│  │  │  └─ Retriever       │         │
-│  │  └────────────────────┘  │         │
-│  └────────────────────────────┘         │
-│                                             │
-│  ┌────────────────────────────────────┐         │
-│  │       Storage Layer              │         │
-│  │  ├─ JSON Persistence        │         │
-│  │  └─ Session Management      │         │
-│  └────────────────────────────────────┘         │
-│                                             │
-└─────────────────────────────────────────────────────────────────────┘
-```
+
+**Alur Data:**
+1. **Upload** → dokumen masuk ke Services (Document Loader)
+2. **Ekstrak** → pypdf/encoding → teks mentah
+3. **Chunk** → pecah jadi paragraph/size-based chunks
+4. **Retrieve** → query vs chunks → top-k relevance scoring
+5. **Inject** → retrieved chunks → system prompt
+6. **Generate** → Groq API (Llama 3.3 70B) dengan RAG context
+7. **Response** → kembali ke chat UI
 
 ---
 
@@ -268,48 +274,32 @@ scholarbot/
 
 ### Alur Dokumen → Jawaban
 
+```mermaid
+flowchart TD
+    A["📄 Upload\n.txt / .pdf"] --> B["services/document_loader.py\n- extract_txt()\n- extract_pdf()"]
+    B --> C["📖 Ekstrak Teks\nplain text output"]
+    C --> D["services/chunker.py\n- chunk_by_paragraph()\n- chunk_by_size()"]
+    D --> E["✂️ List[Chunk]\nparagraphs atau fixed-size"]
+    E --> F["User Question"]
+    F --> G["services/retriever.py\nretrieve(query, chunks, top_k=3)"]
+    G --> H["🔍 RetrievedChunks\nkeyword overlap + TF scoring"]
+    H --> I["core/rag_context.py\nbuild_rag_system_prompt()"]
+    I --> J["📌 System Prompt\n+ DOKUMEN TERAKHAT section"]
+    J --> K["core/session_helpers.py\ncall_llama()"]
+    K --> L["🤖 Groq API\nLlama 3.3 70B"]
+    L --> M["💬 Response → User"]
 ```
-User Upload (.txt / .pdf)
-        │
-        ▼
-services/document_loader.py
-        │
-        ├── extract_txt(file_bytes)  → plain text
-        └── extract_pdf(file_bytes)  → plain text
-        │
-        ▼
-services/chunker.py
-        │
-        └── chunk_text(text)  → List[Chunk]
-            │   - paragraph-based untuk dokumen terstruktur
-            │   - size-based untuk teks panjang
-        │
-        ▼
-services/retriever.py
-        │
-        └── retrieve(query, chunks, top_k=3)  → List[RetrievedChunk]
-            │   - Keyword overlap scoring
-            │   - TF (term frequency) boost
-            │   - Length density penalty
-        │
-        ▼
-core/rag_context.py
-        │
-        └── build_rag_system_prompt(...)  → system prompt + RAG instruction
-        │
-        ▼
-core/session_helpers.py
-        │
-        └── call_llama(...)  → send ke Groq API
-            │   - Menginject konteks dokumen
-            │   - Mempertahankan konteks percakapan
-        │
-        ▼
-Llama 3.3 70B (Groq API)
-        │
-        ▼
-Response → User
-```
+
+**Penjelasan Step:**
+
+| Step | Komponen | Fungsi |
+|------|----------|--------|
+| 1 | `document_loader.py` | Ekstrak teks dari TXT (encoding-safe) atau PDF (pypdf) |
+| 2 | `chunker.py` | Pecah teks: paragraph-based (≤3 paras) atau size-based (800 chars + overlap) |
+| 3 | `retriever.py` | Scoring: keyword overlap + TF boost + length density |
+| 4 | `rag_context.py` | Inject chunks ke system prompt dengan instruksi RAG |
+| 5 | `session_helpers.py` | Orchestrate: conversation history + RAG context → Groq API |
+| 6 | **Groq API** | Generate answer berdasarkan dokumen + conversation context |
 
 ### Pengambilan Keputusan Retrieval
 
