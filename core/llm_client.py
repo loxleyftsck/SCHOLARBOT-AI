@@ -50,6 +50,17 @@ def chat(model: str, messages: list[dict], temperature: float = 0.7, max_tokens:
             temperature=temperature,
             max_tokens=max_tokens,
         )
-        return response.choices[0].message.content
+
+        # Validate response content
+        if not response.choices:
+            return "⚠️ **API tidak mengembalikan response.**\n\nCoba kirim pesan lagi atau periksa koneksi."
+
+        content = response.choices[0].message.content
+
+        if content is None or content.strip() == "":
+            return "⚠️ **Bot tidak dapat generate response.**\n\nCoba reformulasi pertanyaan atau gunakan prompt yang lebih spesifik."
+
+        return content
+
     except Exception as e:
         return f"❌ Terjadi error: `{e}`\n\nPastikan API key valid dan koneksi internet aktif."

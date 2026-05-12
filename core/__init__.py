@@ -10,6 +10,11 @@ from .session_helpers import (
     build_messages,
     extract_topic,
     call_llama,
+    detect_intent,
+    expand_short_command,
+    is_quiz_request,
+    extract_answer_from_response,
+    extract_question_from_response,
     DEFAULT_MODEL,
     DEFAULT_TEMPERATURE,
     DEFAULT_MAX_TOKENS,
@@ -30,6 +35,8 @@ __all__ = [
     "get_client", "set_api_key", "chat", "API_KEY",
     # Prompt builder
     "build_system_prompt", "build_messages", "extract_topic", "call_llama",
+    "detect_intent", "expand_short_command", "is_quiz_request",
+    "extract_answer_from_response", "extract_question_from_response",
     "DEFAULT_MODEL", "DEFAULT_TEMPERATURE", "DEFAULT_MAX_TOKENS",
     # Memory manager
     "SESSION_DEFAULTS",

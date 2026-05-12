@@ -16,6 +16,11 @@ SESSION_DEFAULTS = {
     "session_start": "",
     "msg_count": 0,
     "active_mode": None,
+    # Conversation context tracking
+    "last_question": "",      # Last question generated (for quiz mode)
+    "last_answer": "",        # Last answer provided
+    "current_context": "",    # Current active context ("quiz", "tutor", "mindmap", "")
+    "awaiting_followup": False,  # Is user expected to respond with command?
 }
 
 # Memory display wants a capped view of topics
@@ -99,6 +104,11 @@ def reset_chat(state: dict) -> dict:
         "topics_discussed": [],
         "msg_count": 0,
         "active_mode": None,
+        # Clear context on chat reset
+        "last_question": "",
+        "last_answer": "",
+        "current_context": "",
+        "awaiting_followup": False,
     }
 
 
@@ -153,6 +163,18 @@ def build_memory_card_html(state: dict) -> str:
             '<div class="memory-dot"></div>'
             '<span style="color:#4a5568">Belum ada topik</span>'
             '</div>'
+        )
+
+    # Show active context if any
+    ctx = state.get("current_context", "")
+    if ctx:
+        ctx_labels = {"quiz": "Kuis", "tutor": "Tutor", "mindmap": "Mind Map", "summary": "Rangkuman"}
+        ctx_label = ctx_labels.get(ctx, ctx)
+        html += (
+            f'<div class="memory-item">'
+            f'<div class="memory-dot" style="background:#f6e05e"></div>'
+            f'<span>Mode: <b>{ctx_label}</b></span>'
+            f'</div>'
         )
 
     html += "</div>"

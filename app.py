@@ -26,6 +26,12 @@ from core import (
     build_memory_card_html,
     API_KEY as CORE_API_KEY,
 )
+# New: conversation flow helpers
+from core.session_helpers import (
+    detect_intent,
+    is_quiz_request,
+    extract_answer_from_response,
+)
 from prompts import PERSONALITIES, MODES
 
 # ─── Utils Imports ─────────────────────────────────────────────────────────────
@@ -56,6 +62,32 @@ for key, default_val in defaults.items():
         st.session_state.setdefault(key, datetime.now().strftime("%H:%M"))
     else:
         st.session_state.setdefault(key, default_val)
+
+# ─── Reset Chat Callback ───────────────────────────────────────────────────────
+# FIX: Use callback to avoid "cannot modify after widget instantiation" error
+# This callback runs BEFORE widgets are rendered on the next rerun
+def _reset_chat_callback():
+    """Safe reset callback that only modifies app-managed state, not widget state."""
+    st.session_state.messages = []
+    st.session_state.topics_discussed = []
+    st.session_state.msg_count = 0
+    st.session_state.active_mode = None
+    st.session_state.chip_input = None
+    # Clear conversation context
+    st.session_state.last_question = ""
+    st.session_state.last_answer = ""
+    st.session_state.current_context = ""
+    st.session_state.awaiting_followup = False
+
+# ─── Mode Button Callback ──────────────────────────────────────────────────────
+def _set_mode_callback(mode: str):
+    """Callback to set active learning mode."""
+    st.session_state.active_mode = mode
+
+# ─── Chip Button Callback ──────────────────────────────────────────────────────
+def _set_chip_input_callback(text: str):
+    """Callback to set chip input for processing."""
+    st.session_state.chip_input = text
 
 # ─── Sidebar Config ───────────────────────────────────────────────────────────
 from ui.sidebar import (
@@ -124,8 +156,13 @@ with st.sidebar:
     st.markdown(f'<div class="sidebar-label">{SECTION_LABELS["modes"]}</div>',
                 unsafe_allow_html=True)
     for mode_label in MODES:
-        if st.button(mode_label, key=f"mode_{mode_label}", use_container_width=True):
-            st.session_state.active_mode = mode_label
+        st.button(
+            mode_label,
+            key=f"mode_{mode_label}",
+            on_click=_set_mode_callback,
+            args=(mode_label,),
+            use_container_width=True
+        )
 
     st.markdown("---")
 
@@ -141,10 +178,8 @@ with st.sidebar:
         st.caption(f"📁 {stats.sessions_count} sesi tersimpan ({size_kb:.1f} KB)")
 
     st.markdown("---")
-    if st.button("🗑️ Reset Chat", use_container_width=True):
-        for k, v in reset_chat(dict(st.session_state)).items():
-            st.session_state[k] = v
-        st.rerun()
+    # Reset Chat button with callback (auto-reruns, no explicit st.rerun needed)
+    st.button("🗑️ Reset Chat", use_container_width=True, on_click=_reset_chat_callback)
 
 # ─── MAIN AREA ──────────────────────────────────────────────────────────────────
 st.markdown('<div class="main-wrapper">', unsafe_allow_html=True)
@@ -172,13 +207,13 @@ if not st.session_state.messages:
         cols = st.columns(chips_per_row)
         for j, (icon, text) in enumerate(SUGGESTION_CHIPS[i:i + chips_per_row]):
             with cols[j]:
-                # st.button = real clickable widget
-                # key = unique per chip so Streamlit tracks state
-                # on_click approach: just check session_state after rerun
-                if st.button(f"{icon} {text}", key=f"chip_{i+j}", use_container_width=True):
-                    # Store chip text in session_state — will be processed on rerun
-                    st.session_state.chip_input = text
-                    st.rerun()
+                st.button(
+                    f"{icon} {text}",
+                    key=f"chip_{i+j}",
+                    on_click=_set_chip_input_callback,
+                    args=(text,),
+                    use_container_width=True
+                )
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -215,7 +250,7 @@ if chip_input:
         )
         st.session_state.msg_count += 1
 
-        # Call LLM with token safety check (Phase 6)
+        # Call LLM with token safety check + context tracking
         conversation_history = st.session_state.messages[:-1]
         if not is_within_limit(conversation_history):
             conversation_history = truncate_messages(conversation_history)
@@ -231,11 +266,29 @@ if chip_input:
                 user_name=st.session_state.user_name,
                 topics=st.session_state.topics_discussed,
                 conversation_history=st.session_state.messages[:-1],
+                current_context=st.session_state.current_context,
+                last_question=st.session_state.last_question,
+                last_answer=st.session_state.last_answer,
             )
 
         st.session_state.messages.append(
             {"role": "assistant", "content": reply, "time": datetime.now().strftime("%H:%M")}
         )
+
+        # ── Update conversation context ────────────────────────────────────────
+        # Detect quiz request → set quiz context
+        if is_quiz_request(final_input):
+            st.session_state.current_context = "quiz"
+            # Try to extract question/answer from bot reply for future reference
+            st.session_state.last_question = final_input[:200]
+            st.session_state.last_answer = extract_answer_from_response(reply)
+
+        # Detect short command (user wants answer) → update last_question ref
+        intent = detect_intent(final_input.lower())
+        if intent in ("give_answer", "give_explanation") and st.session_state.last_question:
+            # If the short command got an answer, update last_answer
+            if intent == "give_answer":
+                st.session_state.last_answer = reply[:500]
 
         # Persist to JSON (Phase 6)
         save_session("default", dict(st.session_state))
@@ -293,7 +346,7 @@ if user_input:
         )
         st.session_state.msg_count += 1
 
-        # Call LLM with token safety check (Phase 6)
+        # Call LLM with token safety check + context tracking
         conversation_history = st.session_state.messages[:-1]
         if not is_within_limit(conversation_history):
             conversation_history = truncate_messages(conversation_history)
@@ -309,11 +362,27 @@ if user_input:
                 user_name=st.session_state.user_name,
                 topics=st.session_state.topics_discussed,
                 conversation_history=st.session_state.messages[:-1],
+                current_context=st.session_state.current_context,
+                last_question=st.session_state.last_question,
+                last_answer=st.session_state.last_answer,
             )
 
         st.session_state.messages.append(
             {"role": "assistant", "content": reply, "time": datetime.now().strftime("%H:%M")}
         )
+
+        # ── Update conversation context ────────────────────────────────────────
+        # Detect quiz request → set quiz context
+        if is_quiz_request(final_input):
+            st.session_state.current_context = "quiz"
+            st.session_state.last_question = final_input[:200]
+            st.session_state.last_answer = extract_answer_from_response(reply)
+
+        # Detect short command (user wants answer) → update last_answer ref
+        intent = detect_intent(final_input.lower())
+        if intent in ("give_answer", "give_explanation") and st.session_state.last_question:
+            if intent == "give_answer":
+                st.session_state.last_answer = reply[:500]
 
         # Persist to JSON (Phase 6)
         save_session("default", dict(st.session_state))

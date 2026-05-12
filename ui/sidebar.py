@@ -9,11 +9,21 @@ from core.memory_manager import build_memory_card_html
 
 # ─── Layout Constants ───────────────────────────────────────────────────────────
 
+# Logo will be rendered with st.image() in app.py for proper asset handling
+HEADER_HTML_NO_LOGO = """
+<div class="scholar-header">
+    <div class="scholar-logo-placeholder"></div>
+    <div>
+        <div class="scholar-title">ScholarBot</div>
+        <div class="scholar-sub">AI Study Assistant</div>
+    </div>
+</div>
+"""
+
+# Keep old version for reference but use emoji fallback
 HEADER_HTML = """
 <div class="scholar-header">
-    <div class="scholar-logo">
-        <img src="app/static/logo.png" alt="ScholarBot Logo" style="width: 44px; height: 44px; object-fit: contain;">
-    </div>
+    <div class="scholar-logo">🎓</div>
     <div>
         <div class="scholar-title">ScholarBot</div>
         <div class="scholar-sub">AI Study Assistant</div>

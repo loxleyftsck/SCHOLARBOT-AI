@@ -2,6 +2,10 @@
 .env
 *.env
 
+# Session data (contains user conversation history — never commit)
+storage/data/sessions/
+storage/data/*.json
+
 # Python
 __pycache__/
 *.pyc
