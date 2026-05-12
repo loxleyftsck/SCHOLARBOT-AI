@@ -106,6 +106,42 @@ Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama
 
 ---
 
+## 🎯 Target Pengguna
+
+ScholarBot AI dirancang untuk siapa saja yang ingin belajar secara lebih cerdas dan interaktif.
+
+**Siswa SMA** yang ingin memahami materi pelajaran dengan cara yang lebih menarik dari textbook — bisa minta penjelasan ulang, buat soal latihan, atau upload catatan dari guru.
+
+**Mahasiswa** yang menghadapi materi kompleks di semester awal dan butuh AI tutor yang bisa diajak diskusi, jelasin konsep berulang kali tanpa judgment, dan bantu rangkum bahan ajaran.
+
+**Self-learner** yang belajar secara mandiri dari kursus online, buku, atau dokumen — upload materi dari internet, terus tanya langsung ke chatbot tanpa perlu buka banyak tab.
+
+**Pengguna yang butuh AI tutor interaktif** — bukan sekadar search engine, tapi bisa diajak ngobrol dua arah, dikasih soal, minta pembahasan, dan terus lanjut dari mana mereka berhenti.
+
+ScholarBot bukan pengganti guru atau buku. Tapi bisa jadi companion yang selalu tersedia kapan pun kamu butuh bantuan belajar.
+
+---
+
+## 💡 Bagaimana ScholarBot AI Membantu Pengguna
+
+ScholarBot AI dirancang untuk membuat proses belajar terasa lebih natural dan efektif.
+
+**Memahami dengan Cara Sendiri** — Kamu bisa tanya pakai bahasa sehari-hari, tanpa harus rumusin pertanyaan dalam format akademis. объясняет materi pakai kata-kata yang kamu pahami, bukan definisi dari kamus.
+
+**Latihan Tanpa Batas** — Butuh tambahan soal untuk persiapan ujian? ScholarBot bisa generate soal pilihan ganda atau essay tentang topik yang kamu指定, lengkap dengan kunci jawaban dan pembahasan.
+
+**Belajar dari Materimu Sendiri** — Upload rangkuman, catatan, slide, atau e-book dalam format TXT atau PDF. ScholarBot akan membaca dokumen tersebut dan menjawab pertanyaan berdasarkan isi materimu — bukan dari pengetahuan generik internet.
+
+**Konteks Terjaga di Setiap Percakapan** — Tidak perlu ulang-ulang penjelasan. Kamu tanya "jelaskan X", terus lanjut "kasih contoh", ScholarBot ingat konteks dari pesan sebelumnya.
+
+**Gaya Belajar yang Sesuai** — Pilih personality mode yang cocok: formal untuk belajar serius, santai untuk diskusi kasual, Gen Z untuk vibe yang lebih relatable, atau expert untuk analisis mendalam.
+
+**Interaktif dan Responsif** — Tidak monoton. Kamu bisa minta hint, minta penjelasan ulang, minta buat rangkuman, atau minta roadmap belajar — semua dalam satu chatbot yang sama.
+
+ScholarBot membuat belajar terasa seperti ngobrol dengan tutor pribadi yang tidak pernah kehabisan kesabaran.
+
+---
+
 ## 🛠️ Tech Stack
 
 | Komponen | Teknologi | Deskripsi |
@@ -313,33 +349,47 @@ ScholarBot memahami hubungan antar pesan dengan:
 
 ---
 
-## 🔄 Roadmap
+## 🚀 Future Improvements
 
-### v3.1 — Stabilization (Current)
-- ✅ Document upload (.txt, .pdf)
-- ✅ Text extraction (UTF-8, pypdf)
-- ✅ Paragraph & size chunking
-- ✅ Keyword-based retrieval
-- ✅ RAG context injection
-
-### v3.2 — Enhancement (Future)
+### v3.2 — Enhancement (Planned)
 - [ ] Multi-document retrieval (cross-document scoring)
 - [ ] Better chunking strategies (semantic boundary detection)
 - [ ] Document summarization sebelum chunking
 - [ ] Re-ranking dengan lebih banyak faktor
 - [ ] UI: preview dokumen yang di-upload
 - [ ] UI: search dalam dokumen
+- [ ] Streaming responses untuk experience lebih cepat
 
-### v4.0 — Future (Not Planned)
-- [ ] Vector database (Chroma, FAISS) untuk semantic search
-- [ ] Multi-modal (gambar, audio, video)
-- [ ] Citations dengan inline reference
-- [ ] Export chat sebagai PDF/Word
-- [ ] Real-time collaboration (multi-user sessions)
+### v4.0 — Advanced (Future)
+- [ ] Vector database integration (ChromaDB / FAISS)
+- [ ] Semantic retrieval dengan embedding model
+- [ ] Multi-agent workflow (specialized tutors)
+- [ ] Persistent memory across sessions
+- [ ] Voice interaction (text-to-speech)
+- [ ] Mobile optimization
+- [ ] Inline citations dengan document reference
+- [ ] Chat export as PDF/Word document
+
+### Long-term Vision
+ScholarBot dirancang untuk berevolusi menjadi intelligent learning companion yang bisa beradaptasi dengan gaya belajar setiap pengguna — dari siswa SMA sampai profesional yang sedang reskilling.
 
 ---
 
-## 🧪 Use Case — Belajar Dengan RAG
+## 👨‍💻 Developer
+
+**Developed by:** Herald Michain Samuel Theo
+
+📧 **Contact:** [heraldmsamueltheo@gmail.com](mailto:heraldmsamueltheo@gmail.com)
+
+**Fields of Interest:**
+- AI Engineering
+- Conversational AI
+- Intelligent Tutoring Systems
+- Lightweight RAG Systems
+
+---
+
+## 🐛 Troubleshooting
 
 ### Scenario 1: Belajar Materi Sekolah
 ```
@@ -447,6 +497,10 @@ Dibuat dengan 💜 untuk komunitas belajar Indonesia.
 
 ---
 
-**Versi:** v3.1 (Lightweight RAG Edition)
+**Versi:** v3.1 (Lightweight RAG Edition) — Stable Release
 **Tanggal:** Mei 2026
 **Status:** ✅ Production-Ready
+
+---
+
+## 🧪 Use Case — Belajar Dengan RAG
