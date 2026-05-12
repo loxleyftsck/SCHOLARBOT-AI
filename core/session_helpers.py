@@ -363,7 +363,8 @@ def call_llama(user_msg: str, personality_key: str, user_name: str,
 
     # v3 RAG: Inject document context if available and relevant
     retrieved_chunks = retrieved_chunks or []
-    if retrieved_chunks and should_use_rag(user_msg, has_documents=True):
+    has_documents = bool(retrieved_chunks)
+    if retrieved_chunks and should_use_rag(user_msg, has_documents=has_documents):
         system_content = build_rag_system_prompt(base_system_prompt, retrieved_chunks, detected_context)
     else:
         system_content = base_system_prompt

@@ -101,9 +101,8 @@ def should_use_rag(user_msg: str, has_documents: bool) -> bool:
     - User asks questions (not just short commands)
 
     Skip RAG for:
-    - Upload requests (e.g., "upload file")
-    - Reset commands
-    - System messages
+    - Upload/control requests
+    - Reset commands that include document-related words
 
     Args:
         user_msg: User message to analyze
@@ -117,15 +116,16 @@ def should_use_rag(user_msg: str, has_documents: bool) -> bool:
 
     msg_lower = user_msg.lower().strip()
 
-    # Skip for short commands (handled by expand_short_command)
-    skip_phrases = ["gas", "jawab", "bahas", "buat lagi", "hint",
-                    "reset", "clear", "hapus", "lanjut", "oke"]
-    for phrase in skip_phrases:
-        if msg_lower == phrase:
-            return False
+    # Skip for short follow-up commands (these have their own expansion logic)
+    short_commands = ["gas", "lanjut", "next", "jawab", "bahas",
+                     "buat lagi", "hint", "oke", "ya", "tidak"]
+    if msg_lower in short_commands:
+        return False
 
-    # Skip for system/control messages
-    if any(kw in msg_lower for kw in ["upload", "file", "dokumen"]):
+    # Skip for control messages about documents
+    control_kws = ["upload", "file", "dokumen", "clear", "hapus",
+                   "reset"]
+    if any(kw in msg_lower for kw in control_kws):
         return False
 
     return True

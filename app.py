@@ -104,8 +104,14 @@ def _set_chip_input_callback(text: str):
 
 
 def _clear_docs_callback():
-    """Clear all uploaded RAG documents."""
-    reset_rag_docs(st.session_state)
+    """Clear all uploaded RAG documents from session state.
+
+    MUST directly mutate st.session_state — reset_rag_docs() returns a new dict.
+    """
+    st.session_state.uploaded_docs = []
+    st.session_state.doc_texts = []
+    st.session_state.doc_chunks = []
+    st.session_state.last_retrieved = []
     st.session_state.rag_error = None
 
 
