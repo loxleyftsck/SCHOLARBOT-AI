@@ -1,0 +1,17 @@
+# Backend ignores
+scholarbot/.env
+scholarbot/*.env
+scholarbot/storage/data/
+scholarbot/storage/data/**
+scholarbot/__pycache__/
+scholarbot/*.pyc
+scholarbot/venv/
+scholarbot/env/
+scholarbot/.venv/
+
+# Frontend ignores
+scholarbot-web/node_modules/
+scholarbot-web/dist/
+scholarbot-web/.env
+scholarbot-web/*.env
+scholarbot-web/.DS_Store

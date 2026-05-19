@@ -1,0 +1,41 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cute AI Mascot Reading a Book -->
+
+  <!-- Robot Body -->
+  <circle cx="100" cy="100" r="60" fill="#FDFCFA" stroke="#4A3728" stroke-width="3"/>
+
+  <!-- Robot Head Antenna -->
+  <line x1="100" y1="40" x2="100" y2="25" stroke="#4A3728" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="100" cy="22" r="5" fill="#8B6914"/>
+
+  <!-- Happy Eyes -->
+  <path d="M 80 85 Q 85 95 90 85" stroke="#4A3728" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 110 85 Q 115 95 120 85" stroke="#4A3728" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Smile -->
+  <path d="M 85 110 Q 100 120 115 110" stroke="#4A3728" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Blush -->
+  <circle cx="70" cy="105" r="8" fill="#F8E8D4" opacity="0.6"/>
+  <circle cx="130" cy="105" r="8" fill="#F8E8D4" opacity="0.6"/>
+
+  <!-- Book -->
+  <rect x="70" y="140" width="60" height="45" rx="3" fill="#EDE7D9" stroke="#4A3728" stroke-width="2"/>
+  <line x1="100" y1="140" x2="100" y2="185" stroke="#4A3728" stroke-width="2"/>
+  <line x1="75" y1="150" x2="95" y2="150" stroke="#8A7F74" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="75" y1="157" x2="95" y2="157" stroke="#8A7F74" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="75" y1="164" x2="90" y2="164" stroke="#8A7F74" stroke-width="1.5" stroke-linecap="round"/>
+
+  <line x1="105" y1="150" x2="125" y2="150" stroke="#8A7F74" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="105" y1="157" x2="125" y2="157" stroke="#8A7F74" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="105" y1="164" x2="120" y2="164" stroke="#8A7F74" stroke-width="1.5" strnecap="round"/>
+
+  <!-- Robot Arms holding book -->
+  <path d="M 60 100 Q 50 120 65 145" stroke="#4A3728" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 140 100 Q 150 120 135 145" stroke="#4A3728" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+  <!-- Sparkles around mascot -->
+  <path d="M 30 60 L 32 65 L 37 67 L 32 69 L 30 74 L 28 69 L 23 67 L 28 65 Z" fill="#8B6914" opacity="0.6"/>
+  <path d="M 170 80 L 172 85 L 177 87 L 172 89 L 170 94 L 168 89 L 163 87 L 168 85 Z" fill="#8B6914" opacity="0.6"/>
+  <path d="M 160 140 L 162 145 L 167 147 L 162 149 L 160 154 L 158 149 L 153 147 L 158 145 Z" fill="#8B6914" opacity="0.6"/>
+</svg>

@@ -1,0 +1,233 @@
+"""Streamlit-React bridge utilities.
+
+Provides functions to render custom React components within Streamlit,
+passing data from Python to JavaScript seamlessly.
+"""
+
+import json
+import streamlit.components.v1 as components
+from pathlib import Path
+from typing import List, Dict, Optional
+
+
+def render_custom_chat(
+    messages: List[Dict],
+    is_typing: bool = False,
+    streaming_message_id: Optional[str] = None,
+    height: int = 600,
+    key: Optional[str] = None
+) -> None:
+    """Render custom React chat component with Streamlit data.
+
+    Args:
+        messages: List of message dicts with keys: role, content, time, id
+        is_typing: Whether to show typing indicator
+        streaming_message_id: ID of message currently being streamed
+        height: Component height in pixels
+        key: Streamlit component key for state management
+    """
+
+    # Load HTML template
+    template_path = Path(__file__).parent / "chat_component.html"
+    with open(template_path, "r", encoding="utf-8") as f:
+        html_template = f.read()
+
+    # Prepare messages data
+    messages_data = []
+    for msg in messages:
+        messages_data.append({
+            "id": msg.get("id", None),
+            "role": msg.get("role", "user"),
+            "content": msg.get("content", ""),
+            "time": msg.get("time", "")
+        })
+
+    # Inject data into HTML
+    messages_json = json.dumps(messages_data, ensure_ascii=False)
+    is_typing_json = json.dumps(is_typing)
+    streaming_id_json = json.dumps(streaming_message_id)
+
+    # Replace placeholders
+    html_with_data = html_template.replace(
+        "window.STREAMLIT_MESSAGES || []",
+        f"window.STREAMLIT_MESSAGES = {messages_json}; window.STREAMLIT_MESSAGES"
+    )
+    html_with_data = html_with_data.replace(
+        "window.STREAMLIT_IS_TYPING || false",
+        f"window.STREAMLIT_IS_TYPING = {is_typing_json}; window.STREAMLIT_IS_TYPING"
+    )
+    html_with_data = html_with_data.replace(
+        "window.STREAMLIT_STREAMING_ID || null",
+        f"window.STREAMLIT_STREAMING_ID = {streaming_id_json}; window.STREAMLIT_STREAMING_ID"
+    )
+
+    # Render component
+    components.html(html_with_data, height=height, scrolling=True)
+
+
+def render_welcome_screen(
+    user_name: str = "",
+    suggestion_chips: List[tuple] = None
+) -> None:
+    """Render custom welcome screen with React.
+
+    Args:
+        user_name: User's name for personalized greeting
+        suggestion_chips: List of (label, text) tuples for suggestion chips
+    """
+
+    if suggestion_chips is None:
+        suggestion_chips = [
+            ("Teorema Pythagoras", "Jelaskan teorema Pythagoras"),
+            ("Perang Dunia II", "Rangkum Perang Dunia II"),
+            ("Machine Learning", "Apa itu machine learning?"),
+            ("Soal Kimia", "Buat soal Kimia Kelas 12"),
+        ]
+
+    greeting = f"Halo, {user_name}." if user_name else ""
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            :root {{
+                --color-background: #F5F0E8;
+                --color-surface: #EDE7D9;
+                --color-surface-raised: #FDFCFA;
+                --color-walnut: #4A3728;
+                --color-text-primary: #1C1814;
+                --color-text-muted: #8A7F74;
+                --color-border: #DDD5C8;
+                --color-border-strong: #C5BAB0;
+                --font-serif: 'DM Serif Display', Georgia, serif;
+                --font-sans: 'DM Sans', system-ui, sans-serif;
+                --transition-base: 0.15s ease;
+            }}
+
+            body {{
+                font-family: var(--font-sans);
+                background: var(--color-background);
+                margin: 0;
+                padding: 0;
+            }}
+
+            .welcome-container {{
+                max-width: 720px;
+                margin: 0 auto;
+                padding: 80px 24px 56px;
+                text-align: center;
+            }}
+
+            .welcome-title {{
+                font-size: 2.25rem;
+                font-weight: 400;
+                color: var(--colorxt-primary);
+                font-family: var(--font-serif);
+                margin-bottom: 16px;
+                line-height: 1.15;
+                letter-spacing: -0.03em;
+                animation: fadeInUp 0.6s ease;
+            }}
+
+            .welcome-sub {{
+                color: var(--color-text-muted);
+                font-size: 0.9375rem;
+                line-height: 1.75;
+                font-family: var(--font-sans);
+                font-style: italic;
+                max-width: 440px;
+                margin: 0 auto 32px;
+                animation: fadeInUp 0.6s ease 0.1s backwards;
+            }}
+
+            .welcome-divider {{
+                width: 32px;
+                height: 2px;
+                background: var(--color-walnut);
+                border-radius: 1px;
+                margin: 0 auto 24px;
+                opacity: 0.30;
+                animation: fadeInUp 0.6s ease 0.2s backwards;
+            }}
+
+            .chips-grid {{
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                max-width: 480px;
+                margin: 32px auto 0;
+            }}
+
+            .chip {{
+                background: var(--color-surface-raised);
+                border: 1px solid var(--color-border);
+                border-radius: 20px;
+                padding: 7px 16px;
+                font-size: 0.75rem;
+                color: var(--color-text-body);
+                cursor: pointer;
+                transition: all var(--transition-base);
+                font-family: var(--font-sans);
+                text-align: center;
+                animation: fadeInUp 0.6s ease backwards;
+            }}
+
+            .chip:nth-child(1) {{ animation-delay: 0.3s; }}
+            .chip:nth-child(2) {{ animation-delay: 0.35s; }}
+            .chip:nth-child(3) {{ animation-delay: 0.4s; }}
+            .chip:nth-child(4) {{ animation-delay: 0.45s; }}
+
+            .chip:hover {{
+                background: var(--color-surface);
+                border-color: var(--color-border-strong);
+                transform: translateY(-1px);
+            }}
+
+            .chip:active {{
+                transform: translateY(0);
+            }}
+
+            @keyframes fadeInUp {{
+                from {{
+                    opacity: 0;
+                    transform: translateY(20px);
+                }}
+                to {{
+                    opacity: 1;
+                    transform: translateY(0);
+                }}
+            }}
+
+            @media (max-width: 768px) {{
+                .welcome-container {{
+                    padding: 56px 16px 40px;
+                }}
+
+                .welcome-title {{
+                    font-size: 1.75rem;
+                }}
+
+                .chips-grid {{
+                    max-width: 100%;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="welcome-container">
+            <div class="welcome-title">ScholarBot</div>
+            <div class="welcome-sub">
+                {greeting} Asisten belajar yang membantu memahami materi,
+                membuat rangkuman, dan latihan soal.
+            </div>
+            <div class="welcome-divider"></div>
+            <div class="chips-grid">
+                {"".join(f'<div class="chip">{label}</div>' for label, _ in suggestion_chips)}
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    components.html(html, height=450)

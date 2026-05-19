@@ -1,0 +1,5 @@
+# ScholarBot AI — Test Dependencies
+# Install with: pip install pytest
+
+pytest>=7.4.0
+pytest-mock>=3.12.0

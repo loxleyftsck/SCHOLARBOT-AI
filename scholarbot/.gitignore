@@ -1,0 +1,30 @@
+# Environment
+.env
+*.env
+
+# Session data (contains user conversation history — never commit)
+storage/data/
+storage/data/**
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Streamlit
+.streamlit/
+
+# OS
+.DS_Store
+Thumbs.db

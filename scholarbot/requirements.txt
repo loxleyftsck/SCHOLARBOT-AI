@@ -1,0 +1,12 @@
+streamlit>=1.35.0
+groq>=1.2.0
+python-dotenv>=1.0.0
+# v3 RAG — Lightweight Document Processing
+pypdf>=5.0.0
+
+# Phase 2 — FastAPI Production Backend
+fastapi>=0.111.0
+uvicorn>=0.30.0
+python-multipart>=0.0.9
+
+
