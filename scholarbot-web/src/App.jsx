@@ -1950,6 +1950,10 @@ export default function App() {
                                   {msg.sources.map((src, sIdx) => {
                                     const citeId = src.id ?? sIdx + 1;
                                     const isCited = citedIds.includes(citeId);
+                                    // Dimming only reads as a contrast when something IS cited.
+                                    // Answers with no inline markers at all (quiz mode, for one)
+                                    // were showing every source greyed out as if nothing matched.
+                                    const isDimmed = citedIds.length > 0 && !isCited;
                                     const isActive = activeCitation?.msgId === msg.id && activeCitation.id === citeId;
                                     return (
                                     <div
@@ -1957,7 +1961,7 @@ export default function App() {
                                       id={`src-${msg.id}-${citeId}`}
                                       className={`p-2.5 rounded-lg border bg-surface-raised/40 transition-colors
                                         ${isActive ? 'border-walnut ring-1 ring-walnut' : 'border-border hover:border-walnut'}
-                                        ${isCited ? '' : 'opacity-60'}`}
+                                        ${isDimmed ? 'opacity-60' : ''}`}
                                     >
                                       <div className="flex justify-between items-center mb-1 text-[9px]">
                                         <span className="flex items-center gap-1.5 font-bold text-text-primary">
@@ -1970,7 +1974,7 @@ export default function App() {
                                           )}
                                         </span>
                                         <span className="text-[8px] font-semibold text-walnut-muted">
-                                          {isCited ? 'Dikutip · ' : 'Tidak dikutip · '}
+                                          {citedIds.length === 0 ? '' : isCited ? 'Dikutip · ' : 'Tidak dikutip · '}
                                           Skor {src.score?.toFixed(3)}
                                         </span>
                                       </div>
