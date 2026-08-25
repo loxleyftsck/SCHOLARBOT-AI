@@ -10,14 +10,18 @@ Engineering Decision:
 Phase 3 refactor addition.
 """
 
+import os
 import re
 from dataclasses import dataclass
 
 
 # ─── Model Context Limits ────────────────────────────────────────────────────────
 
-# Groq Llama 3.3 70B Versatile: 128k tokens context window
+# Context windows per model (Groq catalog)
 MODEL_CONTEXT_LIMITS = {
+    "openai/gpt-oss-120b":     131_072,
+    "openai/gpt-oss-20b":      131_072,
+    "qwen/qwen3.6-27b":        131_072,
     "llama-3.3-70b-versatile": 128_000,
     "llama-3.1-70b-versatile": 128_000,
     "llama-3.1-8b-instant":    128_000,
@@ -25,7 +29,7 @@ MODEL_CONTEXT_LIMITS = {
     "llama3-70b-8192":           8_192,
 }
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
 
 # Safety margin: reserve 5% of context for response
 TOKEN_SAFETY_MARGIN = 0.05

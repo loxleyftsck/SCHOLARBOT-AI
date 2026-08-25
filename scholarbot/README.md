@@ -1,7 +1,7 @@
 # 🎓 ScholarBot AI v3 — Lightweight RAG Edition
 
 > **AI-powered educational chatbot** dengan kemampuan **Document-Based RAG** yang ringan dan efisien.
-> Berbasis **Groq API + Llama 3.3 70B** dengan modular architecture, personality modes, conversational memory, dan fitur RAG untuk menjawab pertanyaan berdasarkan materi yang di-upload.
+> Berbasis **Groq API + GPT-OSS 120B** dengan modular architecture, personality modes, conversational memory, dan fitur RAG untuk menjawab pertanyaan berdasarkan materi yang di-upload.
 
 <!-- Screenshot Placeholder — Add screenshots/main.png, screenshots/chat.png, screenshots/features.png -->
 
@@ -11,7 +11,7 @@
 
 **ScholarBot AI v3** adalah chatbot edukasi yang ditingkatkan dengan fitur **RAG (Retrieval-Augmented Generation)**. Dengan upload materi belajar (.txt / .pdf), ScholarBot dapat mengambil konteks relevan dari dokumen untuk memberikan jawaban yang lebih akurat dan kontekstual.
 
-Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama 3.3 70B Versatile (~8000 tok/s). ScholarBot memberikan penjelasan materi, membuat rangkuman, menghasilkan soal latihan, dan merekomendasikan jalur belajar — semua dalam satu antarmuka Streamlit yang intuitif.
+Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + GPT-OSS 120B (inference berkecepatan tinggi). ScholarBot memberikan penjelasan materi, membuat rangkuman, menghasilkan soal latihan, dan merekomendasikan jalur belajar — semua dalam satu antarmuka Streamlit yang intuitif.
 
 ---
 
@@ -20,7 +20,7 @@ Didesain dengan arsitektur **LLM-based NLP System** menggunakan Groq API + Llama
 ### 🤖 AI Core
 | Fitur | Deskripsi |
 |--------|-----------|
-| **LLM Integration** | Groq API + Llama 3.3 70B Versatile (~8000 tok/s) |
+| **LLM Integration** | Groq API + GPT-OSS 120B (model diatur via `MODEL_NAME`) |
 | **Context-Aware Response** | Memahami konteks percakapan multi-turn secara akurat |
 | **Prompt Engineering** | System prompt yang dioptimalkan untuk domain edukasi |
 | **RAG Pipeline** | Document retrieval tanpa vector database (keyword-based) |
@@ -88,7 +88,7 @@ flowchart LR
     end
 
     subgraph LLM["🤖 Groq API"]
-        G["Groq API\nLlama 3.3 70B"]
+        G["Groq API\nGPT-OSS 120B"]
     end
 
     S -->|"file upload"| Services
@@ -107,7 +107,7 @@ flowchart LR
 3. **Chunk** → pecah jadi paragraph/size-based chunks
 4. **Retrieve** → query vs chunks → top-k relevance scoring
 5. **Inject** → retrieved chunks → system prompt
-6. **Generate** → Groq API (Llama 3.3 70B) dengan RAG context
+6. **Generate** → Groq API (GPT-OSS 120B) dengan RAG context
 7. **Response** → kembali ke chat UI
 
 ---
@@ -153,8 +153,8 @@ ScholarBot membuat belajar terasa seperti ngobrol dengan tutor pribadi yang tida
 | Komponen | Teknologi | Deskripsi |
 |-----------|----------|---------|
 | **Frontend** | Streamlit 1.35+ | UI framework untuk aplikasi Python |
-| **AI Backend** | Groq API | LLM inference API (Llama 3.3 70B) |
-| **LLM Model** | Llama 3.3 70B Versatile | Context window 128k tok |
+| **AI Backend** | Groq API | LLM inference API (GPT-OSS 120B) |
+| **LLM Model** | GPT-OSS 120B | Context window 131k tok |
 | **Doc Processing** | pypdf | PDF text extraction |
 | **Chunking** | Native Python | Paragraph & fixed-size splitting |
 | **Retrieval** | Keyword matching + TF scoring | Tidak ada vector DB |
@@ -261,7 +261,7 @@ scholarbot/
 | Environment Variable | Deskripsi |
 |-------------------|-----------|
 | `GROQ_API_KEY` | Groq API Key (wajib untuk fitur AI) |
-| `MODEL_NAME` | Nama model (default: llama-3.3-70b-versatile) |
+| `MODEL_NAME` | Nama model Groq (default: openai/gpt-oss-120b) |
 | `MODEL_TEMPERATURE` | Temperature sampling (default: 0.7) |
 | `MODEL_MAX_TOKENS` | Max token per response (default: 2048) |
 | `APP_TITLE` | Judul aplikasi |
@@ -286,7 +286,7 @@ flowchart TD
     H --> I["core/rag_context.py\nbuild_rag_system_prompt()"]
     I --> J["📌 System Prompt\n+ DOKUMEN TERAKHAT section"]
     J --> K["core/session_helpers.py\ncall_llama()"]
-    K --> L["🤖 Groq API\nLlama 3.3 70B"]
+    K --> L["🤖 Groq API\nGPT-OSS 120B"]
     L --> M["💬 Response → User"]
 ```
 
@@ -473,7 +473,7 @@ Dapatkan API key gratis di: [console.groq.com/keys](https://console.groq.com/key
 ## 📚 Referensi
 
 - [Groq API Documentation](https://console.groq.com/docs/quickstart)
-- [Llama 3.3 Model Card](https://llama.meta.com/)
+- [Groq Model Catalog](https://console.groq.com/docs/models)
 - [Streamlit Documentation](https://docs.streamlit.io/)
 - [PyPDF2 Documentation](https://pypdf.readthedocs.io/)
 

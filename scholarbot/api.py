@@ -23,7 +23,7 @@ from pydantic import BaseModel
 # Add workspace directory to path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from core.llm_client import stream_chat, chat
+from core.llm_client import stream_chat, chat, DEFAULT_MODEL
 from core.session_helpers import (
     build_system_prompt,
     detect_intent,
@@ -569,7 +569,7 @@ async def generate_quiz_endpoint(session_id: Optional[str] = Query(None)):
     try:
         response_text = chat(
             messages=prompt_messages,
-            model="llama-3.3-70b-versatile"
+            model=DEFAULT_MODEL
         )
         
         # Clean markdown wrappers if present
@@ -684,7 +684,7 @@ async def generate_mindmap_endpoint(req: MindMapRequest):
     try:
         response_text = chat(
             messages=prompt_messages,
-            model="llama-3.3-70b-versatile",
+            model=DEFAULT_MODEL,
             json_mode=True
         )
         
@@ -763,7 +763,7 @@ async def expand_mindmap_endpoint(req: MindMapExpandRequest):
     try:
         response_text = chat(
             messages=prompt_messages,
-            model="llama-3.3-70b-versatile",
+            model=DEFAULT_MODEL,
             json_mode=True
         )
         

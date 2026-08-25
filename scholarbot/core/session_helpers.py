@@ -5,11 +5,12 @@ Responsibility: build LLM inputs (messages, system prompt, topic extraction).
 Intent detection for short commands.
 """
 
+import os
 import re
 from prompts import PERSONALITIES
 
-# Default model (can be overridden via set_model in llm_client, or here)
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+# Default model — override with MODEL_NAME in .env (single source: llm_client)
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
 DEFAULT_TEMPERATURE = 0.7
 DEFAULT_MAX_TOKENS = 2048
 

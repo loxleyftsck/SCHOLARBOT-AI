@@ -73,7 +73,7 @@ def _classify_error(exc: Exception) -> tuple[str, bool]:
 
 MAX_RETRIES = 2
 BASE_DELAY = 1.5  # seconds
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = os.getenv("MODEL_NAME", "openai/gpt-oss-120b")
 
 
 def chat(messages: list[dict],
@@ -87,7 +87,7 @@ def chat(messages: list[dict],
     Supports both streaming and non-streaming modes.
 
     Args:
-        model: Model identifier (e.g. "llama-3.3-70b-versatile")
+        model: Model identifier (e.g. "openai/gpt-oss-120b")
         messages: List of {"role": ..., "content": ...} dicts
         temperature: Sampling temperature (0.0–2.0)
         max_tokens: Hard cap on response tokens
