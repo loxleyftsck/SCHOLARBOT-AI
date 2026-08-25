@@ -7,17 +7,24 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "check:markdown": "esbuild scripts/check-markdown.jsx --bundle --platform=node --format=cjs --jsx=automatic --loader:.css=empty --outfile=node_modules/.cache/check-markdown.cjs --log-level=error && node node_modules/.cache/check-markdown.cjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "clsx": "^2.1.1",
     "dagre": "^0.8.5",
     "framer-motion": "^11.2.10",
+    "katex": "^0.16.47",
     "lucide-react": "^0.395.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-markdown": "^10.1.0",
     "reactflow": "^11.11.4",
-    "tailwind-merge": "^2.3.0"
+    "rehype-katex": "^7.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
+    "tailwind-merge": "^2.3.0",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",

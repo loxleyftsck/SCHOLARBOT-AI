@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { AnswerBody, parseCitationIds } from './markdown';
 import dagre from 'dagre';
 import ReactFlow, { Background, Controls, MarkerType, Handle, Position, useNodesState, useEdgesState } from 'reactflow';
 import 'reactflow/dist/style.css';
@@ -55,68 +56,6 @@ const SUGGESTION_CHIPS = [
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 
 // Floating 3D-styled Mascot Animation
-// ─── INLINE CITATION RENDERER (v4.0 — Citation System) ─────────────────────────
-
-const CITATION_REGEX = /\[(\d{1,2})\]/g;
-
-/** Collect citation ids actually used in an answer, ignoring out-of-range markers. */
-function parseCitationIds(text, sourceCount) {
-  if (!text || !sourceCount) return [];
-  const found = new Set();
-  for (const raw of text.match(CITATION_REGEX) || []) {
-    const id = parseInt(raw.slice(1, -1), 10);
-    if (id >= 1 && id <= sourceCount) found.add(id);
-  }
-  return [...found].sort((a, b) => a - b);
-}
-
-/**
- * Render a paragraph with inline **bold** plus clickable [n] citation badges.
- * Markers pointing past the sources we received are left as plain text.
- */
-function CitationText({ text, sourceCount = 0, activeId = null, onCite }) {
-  const nodes = [];
-  let lastIndex = 0;
-  let match;
-  CITATION_REGEX.lastIndex = 0;
-
-  const pushText = (raw, key) => {
-    if (!raw) return;
-    nodes.push(
-      <span
-        key={key}
-        dangerouslySetInnerHTML={{ __html: raw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
-      />
-    );
-  };
-
-  while ((match = CITATION_REGEX.exec(text)) !== null) {
-    const id = parseInt(match[1], 10);
-    if (id < 1 || id > sourceCount) continue; // leave unknown markers as text
-
-    pushText(text.slice(lastIndex, match.index), `t-${lastIndex}`);
-    nodes.push(
-      <button
-        key={`c-${match.index}`}
-        type="button"
-        onClick={() => onCite?.(id)}
-        title={`Lihat sumber ${id}`}
-        className={`inline-flex items-center justify-center align-super mx-0.5 min-w-[15px] h-[15px] px-1 rounded-full
-          text-[8px] font-bold leading-none transition-colors cursor-pointer border
-          ${activeId === id
-            ? 'bg-walnut text-surface-raised border-walnut'
-            : 'bg-walnut/10 text-walnut border-walnut/20 hover:bg-walnut hover:text-surface-raised'}`}
-      >
-        {id}
-      </button>
-    );
-    lastIndex = match.index + match[0].length;
-  }
-
-  pushText(text.slice(lastIndex), 't-end');
-  return <>{nodes}</>;
-}
-
 function AnimatedMascot() {
   return (
     <motion.div 
@@ -1878,38 +1817,12 @@ export default function App() {
                           >
                             {/* Simple Markdown support simulator */}
                             {isBot ? (
-                              <div className="flex flex-col gap-2">
-                                {msg.content.split('\n\n').map((para, pIdx) => {
-                                  const citeProps = {
-                                    sourceCount: msg.sources?.length || 0,
-                                    activeId: activeCitation?.msgId === msg.id ? activeCitation.id : null,
-                                    onCite: (id) => handleCitationClick(msg.id, id)
-                                  };
-                                  if (para.startsWith('### ')) {
-                                    return (
-                                      <h4 key={pIdx} className="font-bold text-sm text-text-primary font-serif mt-1">
-                                        <CitationText text={para.replace('### ', '')} {...citeProps} />
-                                      </h4>
-                                    );
-                                  }
-                                  if (para.startsWith('*   ')) {
-                                    return (
-                                      <ul key={pIdx} className="list-disc pl-5 flex flex-col gap-1">
-                                        {para.split('\n').map((li, lIdx) => (
-                                          <li key={lIdx}>
-                                            <CitationText text={li.replace('*   ', '')} {...citeProps} />
-                                          </li>
-                                        ))}
-                                      </ul>
-                                    );
-                                  }
-                                  return (
-                                    <p key={pIdx}>
-                                      <CitationText text={para} {...citeProps} />
-                                    </p>
-                                  );
-                                })}
-                              </div>
+                              <AnswerBody
+                                content={msg.content}
+                                sourceCount={msg.sources?.length || 0}
+                                activeId={activeCitation?.msgId === msg.id ? activeCitation.id : null}
+                                onCite={(id) => handleCitationClick(msg.id, id)}
+                              />
                             ) : (
                               <div>{msg.content}</div>
                             )}
