@@ -6,7 +6,8 @@ Maintains conversation continuity while adding document context.
 No external dependencies — pure prompt orchestration.
 """
 
-from typing import List, Optional
+import re
+from typing import Any, Dict, List, Optional
 from services.retriever import RetrievedChunk
 
 
@@ -23,8 +24,18 @@ INSTRUKSI:
 - Prioritaskan isi dokumen di atas, bukan pengetahuan eksternal
 - Tetap gunakan bahasa yang natural dan conversational
 
+ATURAN SITASI (WAJIB):
+- Setiap kalimat yang isinya berasal dari materi di atas WAJIB diakhiri penanda sumbernya, contoh: "Elastisitas mengukur kepekaan permintaan. [1]"
+- Gunakan HANYA nomor yang tersedia di atas ({valid_citations}). Jangan pernah mengarang nomor lain.
+- Satu kalimat boleh mengutip lebih dari satu sumber: "... seperti dijelaskan di materi. [1][3]"
+- Kalimat yang berasal dari pengetahuan umum (bukan dari materi) JANGAN diberi penanda sama sekali.
+- Jangan membuat daftar "Sumber:" di akhir jawaban — penanda inline sudah cukup.
+
 TANGGAPI PERTANYAAN USER:
 """[1:]  # Strip leading newline
+
+# Matches inline citation markers such as [1] or [12]
+CITATION_PATTERN = re.compile(r"\[(\d{1,2})\]")
 
 
 def build_rag_system_prompt(base_prompt: str, retrieved_chunks: List[RetrievedChunk],
@@ -50,6 +61,12 @@ def build_rag_system_prompt(base_prompt: str, retrieved_chunks: List[RetrievedCh
     # Format retrieved chunks
     from services.retriever import format_retrieved_context
     retrieved_text = format_retrieved_context(retrieved_chunks)
+    valid_citations = ", ".join(f"[{i}]" for i in range(1, len(retrieved_chunks) + 1))
+
+    rag_block = RAG_INSTRUCTION.format(
+        retrieved_context=retrieved_text,
+        valid_citations=valid_citations
+    )
 
     # Find injection point: before CONVERSATION_RULES
     if "## CONVERSATION CONTINUITY" in base_prompt:
@@ -58,13 +75,13 @@ def build_rag_system_prompt(base_prompt: str, retrieved_chunks: List[RetrievedCh
         if len(parts) == 2:
             return (
                 parts[0] +
-                RAG_INSTRUCTION.format(retrieved_context=retrieved_text) +
+                rag_block +
                 "\n\n## CONVERSATION CONTINUITY" +
                 parts[1]
             )
 
     # Fallback: append at end
-    return base_prompt + RAG_INSTRUCTION.format(retrieved_context=retrieved_text)
+    return base_prompt + rag_block
 
 
 def build_rag_user_message(user_msg: str, retrieved_chunks: List[RetrievedChunk]) -> str:
@@ -129,6 +146,96 @@ def should_use_rag(user_msg: str, has_documents: bool) -> bool:
         return False
 
     return True
+
+
+def build_citation_map(retrieved_chunks: List[RetrievedChunk],
+                       snippet_chars: int = 400) -> List[Dict[str, Any]]:
+    """Turn retrieved chunks into numbered citation entries for the frontend.
+
+    The `id` here is the exact number the LLM is told to use inline ([1], [2], ...),
+    so the UI can match a marker in the answer to its source card.
+
+    Args:
+        retrieved_chunks: Retrieved chunks, in the same order given to the prompt
+        snippet_chars: Max characters of chunk content sent to the UI
+
+    Returns:
+        List of dicts: id, source, chunk_index, score, content
+    """
+    citations: List[Dict[str, Any]] = []
+
+    for i, chunk in enumerate(retrieved_chunks, 1):
+        # Chunks may arrive as dataclasses (live retrieval) or dicts (restored from disk)
+        if hasattr(chunk, "content"):
+            content = chunk.content
+            source = chunk.source_filename
+            chunk_index = getattr(chunk, "chunk_index", 0)
+            score = getattr(chunk, "score", 0.0)
+        else:
+            content = chunk.get("content", "")
+            source = chunk.get("source_filename", chunk.get("source", ""))
+            chunk_index = chunk.get("chunk_index", chunk.get("index", 0))
+            score = chunk.get("score", 0.0)
+
+        citations.append({
+            "id": i,
+            "source": source,
+            "chunk_index": chunk_index,
+            "score": round(float(score), 4),
+            "content": content[:snippet_chars],
+        })
+
+    return citations
+
+
+def extract_citation_ids(text: str, max_id: Optional[int] = None) -> List[int]:
+    """Collect the citation markers actually used in an answer.
+
+    Args:
+        text: LLM answer possibly containing markers like "[1]" or "[2][3]"
+        max_id: Highest valid citation id; markers above it are ignored
+                (the model occasionally invents numbers)
+
+    Returns:
+        Sorted list of unique citation ids, in ascending order
+    """
+    if not text:
+        return []
+
+    found = set()
+    for match in CITATION_PATTERN.findall(text):
+        cid = int(match)
+        if cid < 1:
+            continue
+        if max_id is not None and cid > max_id:
+            continue
+        found.add(cid)
+
+    return sorted(found)
+
+
+def strip_invalid_citations(text: str, max_id: int) -> str:
+    """Remove citation markers that point to sources the user never received.
+
+    Keeps the answer honest when the model cites [7] while only 3 chunks exist.
+
+    Args:
+        text: LLM answer
+        max_id: Highest valid citation id (0 means no sources at all)
+
+    Returns:
+        Answer with out-of-range markers removed
+    """
+    if not text:
+        return text
+
+    def _replace(match: "re.Match[str]") -> str:
+        cid = int(match.group(1))
+        return match.group(0) if 1 <= cid <= max_id else ""
+
+    cleaned = CITATION_PATTERN.sub(_replace, text)
+    # Collapse whitespace left behind by removed markers
+    return re.sub(r"[ \t]{2,}", " ", cleaned)
 
 
 def get_rag_context_summary(retrieved_chunks: List[RetrievedChunk]) -> str:

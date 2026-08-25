@@ -20,7 +20,7 @@ DEFAULT_MAX_TOKENS = 2048
 SHORT_COMMAND_PATTERNS = {
     # "Give answer" group
     r"^(gas|lanjut(kan)?|next|lanjut dong)$": "continue",
-    r"^(jawab|jwbn|jawaban|jwb)$": "give_answer",
+    r"^(jawab|jwbn|jawaban|jwb)(\s+dong)?$": "give_answer",
     r"^berikan\s*($|jawabannya?|jawaban dong)": "give_answer",
     r"^yang\s*($|jawabannya)": "give_answer",
     # "Give explanation" group
@@ -53,7 +53,7 @@ def detect_intent(text: str) -> str | None:
     text = text.strip().lower()
     # Strict threshold: 4 words max for short command classification
     # This prevents "jelaskan teori X" (fresh query) from being treated as short command
-    if len(text.split()) > 4:
+    if len(text.split()) > 3:
         return None  # Not a short command, likely a fresh query
 
     for pattern, intent in SHORT_COMMAND_PATTERNS.items():
@@ -94,8 +94,8 @@ INTENT_EXPANSIONS = {
 }
 
 
-def expand_short_command(text: str, last_question: str, last_answer: str,
-                          current_context: str) -> str:
+def expand_short_command(text: str, last_question: str = "", last_answer: str = "",
+                          current_context: str = "") -> str:
     """Expand a short command by injecting conversation context.
 
     If the message is a short follow-up command, prepend context
@@ -121,7 +121,7 @@ def expand_short_command(text: str, last_question: str, last_answer: str,
     # Build context block
     context_parts = []
 
-    if current_context == "quiz" and last_question:
+    if last_question:
         context_parts.append(f"[KONTEKS SOAL TERAKHIR]: {last_question}")
         if last_answer and intent == "give_answer":
             context_parts.append(f"[KONTEKS JAWABAN TERAKHIR]: {last_answer}")
@@ -198,6 +198,7 @@ def extract_question_from_response(response: str) -> str:
 QUIZ_REQUEST_PATTERNS = [
     r"(?:buatkan?\s*)?(?:soal|quiz|kuis)(?:\s+\w+)*",
     r"^(?:buatkan?|buat|lg|lagi)\s*(?:soalnya?|quiz)",
+    r"(?:tanya|tanyakan?)(?:\s+\w+)*",
 ]
 
 
@@ -249,6 +250,9 @@ def build_system_prompt(personality_key: str, user_name: str = "", topics: list[
     Returns:
         Complete system prompt string.
     """
+    # Fallback to default personality if key not found
+    if personality_key not in PERSONALITIES:
+        personality_key = "😊 Santai & Friendly"
     base = PERSONALITIES[personality_key]["system"]
     memory_parts = []
     if user_name:
@@ -313,16 +317,58 @@ def extract_topic(text: str) -> str | None:
     Returns:
         Topic string or None.
     """
-    keywords = ["tentang", "mengenai", "soal", "materi", "belajar", "pelajaran", "konsep", "jelaskan"]
-    lower = text.lower()
+    lower_text = text.lower().strip()
+    
+    # Check if this is a pure meta-command (no academic topic content)
+    meta_commands = ["mindmap", "mind map", "peta konsep", "buat jadi", "kuis", "soal", "latihan", "reactflow"]
+    is_pure_meta = any(
+        lower_text == cmd 
+        or lower_text == f"buat {cmd}" 
+        or lower_text == f"buatkan {cmd}" 
+        or lower_text == f"buatkan saya {cmd}" 
+        or lower_text == f"coba pakai {cmd}"
+        or lower_text == f"tidak terjadi apa apa"
+        for cmd in meta_commands
+    )
+    if is_pure_meta:
+        return None
+
+    # First attempt: Try extracting after dynamic trigger keywords
+    keywords = ["tentang", "mengenai", "materi", "belajar", "pelajaran", "konsep", "jelaskan"]
     for kw in keywords:
-        if kw in lower:
-            idx = lower.find(kw) + len(kw)
-            snippet = text[idx:idx+40].strip().split()[0:4]
-            if snippet:
-                return " ".join(snippet)
+        if kw in lower_text:
+            idx = lower_text.find(kw) + len(kw)
+            # Find in original case string to preserve title casing
+            orig_idx = text.lower().find(kw) + len(kw)
+            snippet = text[orig_idx:].strip().split()
+            # Clean up trailing punctuation
+            cleaned_words = []
+            for word in snippet[0:4]:
+                cleaned_word = word.rstrip(".,?!:;()")
+                if cleaned_word:
+                    cleaned_words.append(cleaned_word)
+            if cleaned_words:
+                return " ".join(cleaned_words)
+
+    # Second attempt: Clean meta words and see if it's a short topic prompt
+    # E.g. "buatkan mindmap Stoikiometri Kimia" -> "Stoikiometri Kimia"
+    cleaned = text
+    for word in ["buatkan saya", "buatkan", "buat", "coba pakai", "pendekatan", "reactflow", "mindmap", "mind map", "peta konsep", "kuis", "latihan"]:
+        import re
+        cleaned = re.sub(rf"\b{word}\b", "", cleaned, flags=re.IGNORECASE)
+    
+    cleaned = cleaned.strip()
+    # Clean up trailing/leading punctuation
+    cleaned = cleaned.strip(".,?!:;()")
+    
+    # If the remaining cleaned string is a short descriptive phrase, treat it as the topic
+    if cleaned and len(cleaned) < 50 and len(cleaned.split()) <= 4:
+        return cleaned
+
+    # Fallback to short plain text input
     if len(text) < 50:
         return text.strip()
+        
     return None
 
 
@@ -443,4 +489,4 @@ def call_llama(user_msg: str, personality_key: str, user_name: str,
     if not valid:
         return f"Terjadi kesalahan, coba lagi: {err_msg}"
 
-    return chat(DEFAULT_MODEL, messages, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS)
+    return chat(messages, DEFAULT_MODEL, DEFAULT_TEMPERATURE, DEFAULT_MAX_TOKENS)

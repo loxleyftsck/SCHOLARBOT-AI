@@ -30,17 +30,25 @@ ScholarBot is an AI-native educational assistant designed to provide an interact
 - **API Endpoints**: Designed high-performance FastAPI routes at `api.py` including `/api/chat` (Server-Sent Events streaming) and `/api/upload` (Form multipart PDF/TXT uploading).
 - **Session Isolation**: Structured thread-safe, session-isolated data states (`SESSIONS`) to hold memory context, uploaded docs, and discussed topics per browser tab.
 
-### 3. Persistent Memory & RAG (Retrieval-Augmented Generation) — [✅ COMPLETED / IN-PROGRESS]
-**Goal**: Allow ScholarBot to "remember" user documents across sessions.
-- **Vector Database**: Utilized high-performance keyword overlap & TF-based vector scoring in `retriever.py`.
+### 3. Persistent Memory & RAG (Retrieval-Augmented Generation) — [✅ COMPLETED]
+**Goal**: Allow ScholarBot to "remember" user documents across sessions with semantic accuracy.
+- **Lightweight Semantic Search**: Built zero-dependency dense vector Cosine Similarity search using NumPy and a free public Hugging Face Inference API (`all-MiniLM-L6-v2`) with a robust offline keyword fallback.
+- **Adaptive Semantic Chunking**: Split text dynamically at sentence topic transitions based on consecutive embedding similarities using a dynamic 25th-percentile threshold.
 - **RAG Upload Pipeline**: Connected React drag-and-drop to FastAPI RAG endpoint `/api/upload` with instant extraction and chunking of PDF and TXT.
-- **Next Step**: Seamless integration of disk-persisted vector indexes (ChromaDB or FAISS).
+- **Session Caching**: Embedded vector caches directly into the JSON session database for instant query retrieval.
 
-### 4. Gamification & True Progress Tracking — [✅ COMPLETED / IN-PROGRESS]
+### 4. Gamification & True Progress Tracking — [✅ COMPLETED]
 **Goal**: Motivate users through real progress metrics.
 - **Dynamic Quiz Generator**: Created `/api/quiz` endpoint using Groq LLaMA 3.3 70B to automatically generate 1-question multiple choice quizzes based on the current session's conversation history.
 - **Quiz Scorer & Statistics**: Wired `InteractiveQuiz` in React to fetch dynamic AI quizzes and submit results to POST `/api/quiz/submit` to record progress in `SessionState`.
-- **Next Step**: Map quiz performance directly to updating the "Lanjutkan Belajar" mastery progress bars in the sidebar.
+- **Mastery Progress Sidebar**: Directly integrated quiz scores to update user topic mastery scores and progress bars in real-time.
+
+### 5. Citation System (Verifiable Answers) — [✅ COMPLETED]
+**Goal**: Make every document-based claim traceable back to the exact chunk it came from.
+- **Numbered Retrieval Context**: `format_retrieved_context` now labels each chunk `[1] Sumber: file (bagian n)` — the same marker the model is instructed to reuse inline.
+- **Citation Rules in Prompt**: `RAG_INSTRUCTION` requires an inline `[n]` after every sentence drawn from the material, restricted to the ids actually supplied.
+- **Citation Map & Guards**: `build_citation_map` serializes numbered sources for the SPA; `extract_citation_ids` records what the answer really used and `strip_invalid_citations` drops hallucinated ids.
+- **Interactive UI**: `[n]` renders as a clickable badge that expands the source panel, scrolls to the matching card, and highlights it; uncited sources are dimmed.
 
 ## 🛠 Tech Stack Summary
 - **AI Inference**: Groq API (LLaMA 3)

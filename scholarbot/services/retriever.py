@@ -58,6 +58,9 @@ def compute_relevance_score(query: str, chunk_content: str) -> float:
     Returns:
         Relevance score (0.0 to 1.0+)
     """
+    # Support both str and Chunk object inputs
+    if hasattr(chunk_content, "content"):
+        chunk_content = chunk_content.content
     query_tokens = tokenize(query)
     chunk_tokens = tokenize(chunk_content)
 
@@ -169,7 +172,8 @@ def format_retrieved_context(retrieved: List[RetrievedChunk], max_chars: int = 1
     for i, chunk in enumerate(retrieved, 1):
         # Truncate chunk if needed
         chunk_text = chunk.content[:max_chars] if max_chars > 0 else chunk.content
-        citation = f"[Dokumen {i}: {chunk.source_filename}]"
+        # Citation marker is the SAME token the LLM must reuse inline: [1], [2], ...
+        citation = f"[{i}] Sumber: {chunk.source_filename} (bagian {chunk.chunk_index + 1})"
 
         parts.append(f"{citation}\n{chunk_text}")
         total += len(chunk_text) + len(citation)

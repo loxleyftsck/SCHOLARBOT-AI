@@ -14,7 +14,7 @@ class TestRenderCustomChat:
         mock_html_content = "<!DOCTYPE html><html><body><script>window.STREAMLIT_MESSAGES || []; window.STREAMLIT_IS_TYPING || false; window.STREAMLIT_STREAMING_ID || null;</script></body></html>"
         with patch("ui.react_bridge.components.html") as mock_html:
             with patch("builtins.open", MagicMock()) as mock_file:
-                mock_file.return_value.read.return_value = mock_html_content
+                mock_file.return_value.__enter__.return_value.read.return_value = mock_html_content
                 render_custom_chat([], is_typing=False)
                 mock_html.assert_called_once()
 
@@ -34,7 +34,7 @@ class TestRenderCustomChat:
         )
         with patch("ui.react_bridge.components.html") as mock_html:
             with patch("builtins.open", MagicMock()) as mock_file:
-                mock_file.return_value.read.return_value = mock_html_content
+                mock_file.return_value.__enter__.return_value.read.return_value = mock_html_content
                 render_custom_chat(messages, is_typing=False)
 
                 call_kwargs = mock_html.call_args
@@ -56,7 +56,7 @@ class TestRenderCustomChat:
         )
         with patch("ui.react_bridge.components.html") as mock_html:
             with patch("builtins.open", MagicMock()) as mock_file:
-                mock_file.return_value.read.return_value = mock_html_content
+                mock_file.return_value.__enter__.return_value.read.return_value = mock_html_content
                 render_custom_chat([], is_typing=True)
 
                 call_kwargs = mock_html.call_args
@@ -74,7 +74,7 @@ class TestRenderCustomChat:
         )
         with patch("ui.react_bridge.components.html") as mock_html:
             with patch("builtins.open", MagicMock()) as mock_file:
-                mock_file.return_value.read.return_value = mock_html_content
+                mock_file.return_value.__enter__.return_value.read.return_value = mock_html_content
                 render_custom_chat([], is_typing=False, streaming_message_id="test-stream-123")
 
                 call_kwargs = mock_html.call_args

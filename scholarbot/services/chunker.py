@@ -121,18 +121,124 @@ def chunk_by_size(text: str, chunk_size: int = 800, overlap: int = 150) -> list[
     return chunks
 
 
-def chunk_text(text: str, strategy: str = "auto", filename: str = "") -> list[Chunk]:
+def chunk_semantically(text: str, filename: str = "", max_chunk_chars: int = 1000) -> list[Chunk]:
+    """Split text into chunks semantically using adaptive sentence similarity.
+
+    Falls back to paragraph chunking if offline or API error occurs.
+
+    Args:
+        text: Full document text
+        filename: Source filename
+        max_chunk_chars: Hard limit for chunk length
+
+    Returns:
+        List of Chunk objects
+    """
+    import re
+    import numpy as np
+    from services.semantic_search import get_embeddings_batch, compute_cosine_similarity
+
+    if not text or not text.strip():
+        return []
+
+    # 1. Split text into sentences
+    sentence_list = [s.strip() for s in re.split(r'(?<=[.!?])\s+', text) if s.strip()]
+    if not sentence_list:
+        return []
+
+    if len(sentence_list) <= 3:
+        return [Chunk(content=text.strip(), chunk_index=0, source_filename=filename)]
+
+    # Limit units to avoid Hugging Face payload size or rate limits
+    if len(sentence_list) > 100:
+        grouped_sentences = []
+        current_group = []
+        for s in sentence_list:
+            current_group.append(s)
+            if len(current_group) >= 3:
+                grouped_sentences.append(" ".join(current_group))
+                current_group = []
+        if current_group:
+            grouped_sentences.append(" ".join(current_group))
+        units = grouped_sentences
+    else:
+        units = sentence_list
+
+    # 2. Get embeddings in one batch
+    embeddings = get_embeddings_batch(units)
+    if not embeddings or len(embeddings) != len(units):
+        print("[Semantic Chunking Fallback] Gagal mengambil embedding. Menggunakan paragraph chunking.")
+        fallback_chunks = chunk_by_paragraph(text)
+        for c in fallback_chunks:
+            c.source_filename = filename
+        return fallback_chunks
+
+    # 3. Calculate similarity between consecutive units
+    similarities = []
+    for i in range(len(units) - 1):
+        sim = compute_cosine_similarity(embeddings[i], embeddings[i+1])
+        similarities.append(sim)
+
+    # 4. Adaptive thresholding using the 25th percentile (bottom 25% similar transitions split)
+    threshold = float(np.percentile(similarities, 25)) if similarities else 0.65
+    threshold = max(0.55, min(0.75, threshold))  # Clamp to reasonable bounds
+
+    # 5. Group into chunks based on semantic split decisions
+    chunks = []
+    current_chunk_units = [units[0]]
+    current_chunk_emb = [embeddings[0]]
+    chunk_index = 0
+
+    for i in range(1, len(units)):
+        sim = similarities[i-1]
+        current_len = sum(len(u) for u in current_chunk_units)
+
+        # Split condition: similarity drops below threshold or max character limit is breached
+        if sim < threshold or current_len + len(units[i]) > max_chunk_chars:
+            chunk_content = " ".join(current_chunk_units)
+            avg_emb = np.mean(current_chunk_emb, axis=0).tolist() if current_chunk_emb else None
+            
+            chunks.append(Chunk(
+                content=chunk_content,
+                chunk_index=chunk_index,
+                source_filename=filename,
+                embedding=avg_emb
+            ))
+            chunk_index += 1
+            current_chunk_units = [units[i]]
+            current_chunk_emb = [embeddings[i]]
+        else:
+            current_chunk_units.append(units[i])
+            current_chunk_emb.append(embeddings[i])
+
+    # Append trailing chunk
+    if current_chunk_units:
+        chunk_content = " ".join(current_chunk_units)
+        avg_emb = np.mean(current_chunk_emb, axis=0).tolist() if current_chunk_emb else None
+        chunks.append(Chunk(
+            content=chunk_content,
+            chunk_index=chunk_index,
+            source_filename=filename,
+            embedding=avg_emb
+        ))
+
+    return chunks
+
+
+def chunk_text(text: str, strategy: str = "auto", filename: str = "", max_chars: int = 800) -> list[Chunk]:
     """Unified chunking interface with auto strategy selection.
 
     Strategy selection:
     - "paragraph": for text with clear paragraph breaks
     - "size": for dense long-form text
-    - "auto": automatically detect best strategy based on content
+    - "semantic": for semantic boundary-based chunking
+    - "auto": automatically detect best strategy based on content size
 
     Args:
         text: Full document text
-        strategy: "paragraph" | "size" | "auto"
+        strategy: "paragraph" | "size" | "semantic" | "auto"
         filename: Source filename (stored in Chunk metadata)
+        max_chars: Maximum characters per chunk (used by size strategy)
 
     Returns:
         List of Chunk objects with source_filename set
@@ -140,25 +246,28 @@ def chunk_text(text: str, strategy: str = "auto", filename: str = "") -> list[Ch
     if not text:
         return []
 
-    # Auto-detect: text with many double newlines → paragraph mode
     paragraph_count = text.count('\n\n')
     has_clear_structure = paragraph_count >= 3
 
     if strategy == "auto":
-        # If text is short or has clear paragraphs, use paragraph mode
-        if len(text) < 1000 or has_clear_structure:
+        # Moderate size documents default to high-quality semantic chunking
+        if len(text) < 50000:
+            strategy = "semantic"
+        elif len(text) < 1000 or has_clear_structure:
             strategy = "paragraph"
         else:
             strategy = "size"
 
-    if strategy == "paragraph":
+    if strategy == "semantic":
+        raw_chunks = chunk_semantically(text, filename)
+        if not raw_chunks and text.strip():
+            raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
+    elif strategy == "paragraph":
         raw_chunks = chunk_by_paragraph(text)
-        # If paragraph mode returned nothing (text too short), return full text as single chunk
         if not raw_chunks and text.strip():
             raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
     else:
-        raw_chunks = chunk_by_size(text)
-        # If size mode returns tiny fragments, return full text as single chunk
+        raw_chunks = chunk_by_size(text, chunk_size=max_chars)
         if not raw_chunks and text.strip():
             raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
 

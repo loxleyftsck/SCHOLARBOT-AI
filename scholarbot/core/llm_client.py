@@ -44,7 +44,8 @@ def _classify_error(exc: Exception) -> tuple[str, bool]:
     if exc_type in ("ConnectError", "ReadTimeout", "ConnectTimeout",
                     "RemoteDisconnected", "HTTPStatusError",
                     "httpx.ConnectError", "httpx.ReadTimeout",
-                    "httpx.PoolTimeout", "httpx.ConnectRetry"):
+                    "httpx.PoolTimeout", "httpx.ConnectRetry",
+                    "TimeoutException", "ConnectionError"):
         return ("Koneksi terputus. Mencoba ulang...", True)
 
     # Rate limit — retryable with backoff
@@ -79,7 +80,8 @@ def chat(messages: list[dict],
          model: str = DEFAULT_MODEL,
          temperature: float = 0.7,
          max_tokens: int = 2048,
-         stream: bool = False) -> str | Iterator[str]:
+         stream: bool = False,
+         json_mode: bool = False) -> str | Iterator[str]:
     """Send a chat request to Groq and return the assistant's response text.
 
     Supports both streaming and non-streaming modes.
@@ -107,9 +109,11 @@ def chat(messages: list[dict],
     for attempt in range(MAX_RETRIES + 1):
         try:
             if stream:
+                if json_mode:
+                    raise ValueError("Streaming is not supported with json_mode")
                 return _stream_chat(client, model, messages, temperature, max_tokens)
             else:
-                return _non_stream_chat(client, model, messages, temperature, max_tokens)
+                return _non_stream_chat(client, model, messages, temperature, max_tokens, json_mode)
 
         except httpx.TimeoutException as e:
             user_msg, is_retryable = _classify_error(e)
@@ -135,15 +139,20 @@ def _non_stream_chat(client: Groq,
                       model: str,
                       messages: list[dict],
                       temperature: float,
-                      max_tokens: int) -> str:
+                      max_tokens: int,
+                      json_mode: bool = False) -> str:
     """Non-streaming chat completion."""
-    response = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
-        timeout=httpx.Timeout(30.0, connect=10.0),
-    )
+    kwargs = {
+        "model": model,
+        "messages": messages,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "timeout": httpx.Timeout(30.0, connect=10.0),
+    }
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = client.chat.completions.create(**kwargs)
 
     if not response.choices:
         return "API tidak mengembalikan response. Coba kirim pesan lagi."

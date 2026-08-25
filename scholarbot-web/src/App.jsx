@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
+import dagre from 'dagre';
+import ReactFlow, { Background, Controls, MarkerType, Handle, Position, useNodesState, useEdgesState } from 'reactflow';
+import 'reactflow/dist/style.css';
+import { API_BASE_URL } from './config';
+
 import { 
   motion, 
   AnimatePresence 
@@ -13,27 +19,28 @@ import {
   Trash2, 
   Crown, 
   Send, 
-  Check, 
-  CornerDownRight, 
   Bot, 
   User, 
   Award,
   Sparkles,
   ArrowRight,
   Maximize2,
+  Minimize2,
+  GitFork,
   ChevronDown,
   RefreshCw,
-  Plus,
-  HelpCircle,
-  X
+  X,
+  Search,
+  Edit3
 } from 'lucide-react';
 
 // ─── STATIC DATA & ASSETS ──────────────────────────────────────────────────────
 
 const PERSONALITIES = {
   "😊 Santai & Friendly": "Menjelaskan materi dengan bahasa santai, penuh analogi kehidupan sehari-hari.",
-  "🧠 Akademik & Detil": "Bahasa formal akademis, referensi ilmiah, terstruktur, dan sangat mendalam.",
-  "💡 Kreatif & Interaktif": "Mengajak berpikir kritis dengan teka-teki, pertanyaan balik, dan skenario seru."
+  "🎓 Formal Tutor": "Bahasa formal akademis, referensi ilmiah, terstruktur, dan sangat mendalam.",
+  "⚡ Gen Z Mode": "Gaya bicara gaul, no cap, literally, slay fr fr agar belajar lebih chill dan engaging.",
+  "💼 Expert Consultant": "Analisis mendalam, perspektif multi-dimensi, framework berpikir, dan actionable insights."
 };
 
 const SUGGESTION_CHIPS = [
@@ -43,37 +50,73 @@ const SUGGESTION_CHIPS = [
   "Buat soal Stoikiometri Kimia"
 ];
 
-// Mock AI response generator based on question and mode
-const generateAIResponse = (question, mode, personality) => {
-  const lowercaseQ = question.toLowerCase();
-  
-  if (mode === "rangkuman" || lowercaseQ.includes("rangkum")) {
-    return `### ✍️ RANGKUMAN MATERI: ${question}\n\nBerikut adalah poin-poin penting terstruktur untuk pemahaman cepat:\n\n*   **Intisari Utama**: Topik ini membahas konsep mendasar mengenai struktur, mekanisme operasional, dan aplikasi praktis di dunia nyata.\n*   **Komponen Kunci**:\n    1.  *Landasan Teoretis*: Aturan universal yang mendasari fenomena ini.\n    2.  *Metodologi*: Langkah taktis sistematis untuk menyelesaikan studi kasus.\n    3.  *Variabel Pendukung*: Faktor eksternal yang memengaruhi hasil akhir.\n*   **Kesimpulan Praktis**: Memahami topik ini mempermudah penyelesaian masalah analisis tingkat lanjut.\n\n*Analisis disesuaikan dengan gaya ${personality}.*`;
-  }
-  
-  if (mode === "latihan" || lowercaseQ.includes("soal") || lowercaseQ.includes("kuis")) {
-    return `### 🧪 GENERATOR LATIHAN SOAL\n\nSaya telah membuat kuis interaktif berdasarkan topik **${question}**.\n\nSilakan gunakan panel **Latihan Soal** di bawah untuk menjawab pertanyaan pilihan ganda secara langsung dengan visual interaktif!`;
-  }
 
-  if (mode === "mindmap" || lowercaseQ.includes("mind map") || lowercaseQ.includes("peta konsep")) {
-    return `### 🗺️ MIND MAP GENERATED\n\nSaya telah memetakan struktur kognitif untuk **${question}**.\n\nAnda dapat mengeksplorasi peta konsep interaktif ini pada tab **Mind Map** di sebelah kiri untuk melihat keterkaitan antar konsep secara visual.`;
-  }
-
-  // Default chat response
-  if (lowercaseQ.includes("pythagoras")) {
-    return `### 📐 Teorema Pythagoras\n\nTeorema Pythagoras menyatakan bahwa pada **segitiga siku-siku**, kuadrat panjang sisi miring (hipotenusa) sama dengan jumlah kuadrat panjang sisi-sisi siku-sikunya.\n\n$$\na^2 + b^2 = c^2\n$$\n\n*   **a & b**: Sisi-sisi siku-siku (tegak dan mendatar)\n*   **c**: Sisi miring (terpanjang)\n\n**Contoh Analogi Nyata (${personality})**:\nBayangkan Anda ingin menyeberangi lapangan rumput berbentuk persegi panjang. Daripada berjalan memutari tepi lapangan (sisi tegak lalu mendatar), Anda berjalan memotong secara diagonal (sisi miring). Jarak diagonal ini selalu mengikuti aturan Pythagoras!`;
-  }
-
-  if (lowercaseQ.includes("machine learning") || lowercaseQ.includes("ml")) {
-    return `### 🧠 Pengantar Machine Learning\n\n**Machine Learning (ML)** adalah cabang dari kecerdasan buatan (AI) yang fokus pada pengembangan sistem agar mampu belajar mandiri dari data tanpa perlu diprogram secara eksplisit.\n\n*   **Supervised Learning**: Belajar dari data yang sudah diberi label (contoh: memprediksi harga rumah dari data historis).\n*   **Unsupervised Learning**: Menemukan pola tersembunyi dari data tanpa label (contoh: mengelompokkan segmen pelanggan).\n*   **Reinforcement Learning**: Belajar melalui trial-and-error berdasarkan sistem reward dan punishment.\n\n*Gaya penjelasan saat ini mengikuti kepribadian: **${personality}**.*`;
-  }
-
-  return `### 🎓 Penjelasan Materi: ${question}\n\nTerima kasih atas pertanyaannya! Berdasarkan gaya **${personality}**, mari kita bedah konsep ini:\n\n1.  **Definisi Dasar**: Ini adalah pilar fundamental yang wajib dipahami terlebih dahulu.\n2.  **Cara Kerja**: Sistem bekerja secara runtut berdasarkan input data yang masuk.\n3.  **Aplikasi Praktis**: Digunakan secara luas di industri modern dan akademisi.\n\nAda poin spesifik yang ingin Anda bahas lebih dalam?`;
-};
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────────────────────
 
 // Floating 3D-styled Mascot Animation
+// ─── INLINE CITATION RENDERER (v4.0 — Citation System) ─────────────────────────
+
+const CITATION_REGEX = /\[(\d{1,2})\]/g;
+
+/** Collect citation ids actually used in an answer, ignoring out-of-range markers. */
+function parseCitationIds(text, sourceCount) {
+  if (!text || !sourceCount) return [];
+  const found = new Set();
+  for (const raw of text.match(CITATION_REGEX) || []) {
+    const id = parseInt(raw.slice(1, -1), 10);
+    if (id >= 1 && id <= sourceCount) found.add(id);
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
+/**
+ * Render a paragraph with inline **bold** plus clickable [n] citation badges.
+ * Markers pointing past the sources we received are left as plain text.
+ */
+function CitationText({ text, sourceCount = 0, activeId = null, onCite }) {
+  const nodes = [];
+  let lastIndex = 0;
+  let match;
+  CITATION_REGEX.lastIndex = 0;
+
+  const pushText = (raw, key) => {
+    if (!raw) return;
+    nodes.push(
+      <span
+        key={key}
+        dangerouslySetInnerHTML={{ __html: raw.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
+      />
+    );
+  };
+
+  while ((match = CITATION_REGEX.exec(text)) !== null) {
+    const id = parseInt(match[1], 10);
+    if (id < 1 || id > sourceCount) continue; // leave unknown markers as text
+
+    pushText(text.slice(lastIndex, match.index), `t-${lastIndex}`);
+    nodes.push(
+      <button
+        key={`c-${match.index}`}
+        type="button"
+        onClick={() => onCite?.(id)}
+        title={`Lihat sumber ${id}`}
+        className={`inline-flex items-center justify-center align-super mx-0.5 min-w-[15px] h-[15px] px-1 rounded-full
+          text-[8px] font-bold leading-none transition-colors cursor-pointer border
+          ${activeId === id
+            ? 'bg-walnut text-surface-raised border-walnut'
+            : 'bg-walnut/10 text-walnut border-walnut/20 hover:bg-walnut hover:text-surface-raised'}`}
+      >
+        {id}
+      </button>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  pushText(text.slice(lastIndex), 't-end');
+  return <>{nodes}</>;
+}
+
 function AnimatedMascot() {
   return (
     <motion.div 
@@ -89,6 +132,13 @@ function AnimatedMascot() {
       }}
       whileHover={{ scale: 1.05 }}
     >
+      {/* Premium Ambient Radial Glow */}
+      <motion.div 
+        className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(139,105,20,0.12)_0%,transparent_70%)] pointer-events-none"
+        animate={{ scale: [0.85, 1.15, 0.85], opacity: [0.6, 1, 0.6] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
       {/* Sparkle effects around mascot */}
       <motion.div 
         className="absolute top-2 left-6 text-primary"
@@ -129,111 +179,476 @@ function AnimatedMascot() {
   );
 }
 
-// Interactive Mind Map Component
-function InteractiveMindMap({ topic = "Machine Learning" }) {
-  const [activeNode, setActiveNode] = useState(null);
-  
-  const nodes = [
-    { id: 1, label: topic, x: 250, y: 150, type: 'root', desc: 'Topik utama yang sedang kita bedah bersama.' },
-    { id: 2, label: 'Supervised', x: 120, y: 80, type: 'branch', desc: 'Belajar dari data berlabel. Contoh: Regresi & Klasifikasi.' },
-    { id: 3, label: 'Unsupervised', x: 380, y: 80, type: 'branch', desc: 'Mencari struktur tersembunyi tanpa label. Contoh: Clustering.' },
-    { id: 4, label: 'Reinforcement', x: 250, y: 250, type: 'branch', desc: 'Sistem belajar mandiri menggunakan reward & punishment.' },
-  ];
+// Custom Node Component for React Flow representing the walnut-themed nodes
+function CustomMindMapNode({ data, selected }) {
+  const isRoot = data.type === 'root';
+  const isBranch = data.type === 'branch';
 
   return (
-    <div className="w-full bg-surface-raised border border-border rounded-2xl p-6 shadow-sm overflow-hidden relative min-h-[360px] flex flex-col justify-between">
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h4 className="font-serif text-lg text-text-primary flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-primary" /> Visual Mind Map
-          </h4>
-          <p className="text-xs text-text-muted">Klik node untuk mengeksplorasi subtopik</p>
-        </div>
-        <button className="text-xs font-semibold text-primary flex items-center gap-1 hover:underline">
-          <Maximize2 className="w-3.5 h-3.5" /> Ekspansi
-        </button>
-      </div>
-
-      {/* SVG Canvas */}
-      <div className="relative flex-1 bg-background rounded-xl border border-border p-2 overflow-hidden min-h-[220px]">
-        <svg className="absolute inset-0 w-full h-full pointer-events-none">
-          {/* Connection Lines with animations */}
-          <motion.line 
-            x1="250" y1="150" x2="120" y2="80" 
-            stroke="#C5BAB0" strokeWidth="2" strokeDasharray="4 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1 }}
-          />
-          <motion.line 
-            x1="250" y1="150" x2="380" y2="80" 
-            stroke="#C5BAB0" strokeWidth="2" strokeDasharray="4 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1, delay: 0.2 }}
-          />
-          <motion.line 
-            x1="250" y1="150" x2="250" y2="250" 
-            stroke="#C5BAB0" strokeWidth="2" strokeDasharray="4 4"
-            initial={{ pathLength: 0 }}
-            animate={{ pathLength: 1 }}
-            transition={{ duration: 1, delay: 0.4 }}
-          />
-        </svg>
-
-        {/* Nodes */}
-        {nodes.map((node) => (
-          <motion.button
-            key={node.id}
-            className={`absolute px-4 py-2 rounded-full border text-xs font-medium shadow-sm transition-all flex items-center gap-1.5 z-10
-              ${node.type === 'root' 
-                ? 'bg-walnut text-surface-raised border-walnut-muted' 
-                : 'bg-surface-raised border-border text-text-body hover:border-walnut'
-              }`}
-            style={{ 
-              left: `calc(${node.x}px - 60px)`, 
-              top: `calc(${node.y}px - 20px)`,
-              width: '120px',
-              justifyContent: 'center'
-            }}
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => setActiveNode(node)}
-          >
-            {node.type === 'root' && <Sparkles className="w-3.5 h-3.5 fill-current text-primary-light" />}
-            {node.label}
-          </motion.button>
-        ))}
-
-        {/* Description Panel overlay */}
-        <AnimatePresence>
-          {activeNode && (
-            <motion.div 
-              className="absolute bottom-2 left-2 right-2 bg-surface-raised border border-border rounded-xl p-3 shadow-md z-20 flex justify-between items-start gap-4"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 15 }}
-            >
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-primary-light">
-                  {activeNode.type.toUpperCase()} NODE
-                </span>
-                <h5 className="font-semibold text-text-primary text-sm mt-0.5">{activeNode.label}</h5>
-                <p className="text-xs text-text-body mt-1 leading-relaxed">{activeNode.desc}</p>
-              </div>
-              <button 
-                onClick={() => setActiveNode(null)}
-                className="text-[10px] font-bold text-text-muted hover:text-text-primary"
-              >
-                TUTUP
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+    <div
+      className={`px-4 py-2.5 rounded-full border text-xs font-semibold shadow-md transition-all flex items-center gap-2 min-w-[140px] max-w-[200px] text-center justify-center relative
+        ${isRoot 
+          ? 'bg-walnut text-surface-raised border-walnut-muted' 
+          : isBranch
+            ? 'bg-surface-raised border-border text-text-body hover:border-walnut'
+            : 'bg-background border-border-light text-text-muted hover:border-primary-light font-medium'
+        }
+        ${selected ? 'ring-2 ring-primary ring-offset-2 border-primary' : ''}
+      `}
+    >
+      {!isRoot && (
+        <Handle 
+          type="target" 
+          position={Position.Top} 
+          style={{ background: '#8B6914', border: 'none', width: '6px', height: '6px' }} 
+        />
+      )}
+      
+      {isRoot && <Sparkles className="w-3.5 h-3.5 fill-current text-primary-light shrink-0 animate-pulse" />}
+      <span className="truncate w-full select-none">{data.label}</span>
+      
+      <Handle 
+        type="source" 
+        position={Position.Bottom} 
+        style={{ background: '#8B6914', border: 'none', width: '6px', height: '6px' }} 
+      />
     </div>
   );
 }
+
+// React Flow static node types declaration
+const nodeTypes = {
+  customNode: CustomMindMapNode
+};
+
+// Helper function to layout elements using Dagre for a balanced hierarchical tree
+function getLayoutedElements(nodes, edges) {
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({ rankdir: 'TB', ranksep: 60, nodesep: 40 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  nodes.forEach((node) => {
+    g.setNode(node.id, { width: 160, height: 40 });
+  });
+
+  edges.forEach((edge) => {
+    g.setEdge(edge.source, edge.target);
+  });
+
+  try {
+    dagre.layout(g);
+  } catch (e) {
+    console.error("Dagre layout error:", e);
+  }
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = g.node(node.id);
+    return {
+      ...node,
+      position: {
+        x: nodeWithPosition ? nodeWithPosition.x - 80 : Math.random() * 200,
+        y: nodeWithPosition ? nodeWithPosition.y - 20 : Math.random() * 200,
+      },
+    };
+  });
+
+  return { nodes: layoutedNodes, edges };
+}
+
+// Interactive Mind Map Component
+function InteractiveMindMap({ 
+  topic = "Machine Learning",
+  nodesData = [],
+  edgesData = [],
+  isLoading = false,
+  isExpanding = false,
+  onExpandNode,
+  onRegenerate
+}) {
+  const [activeNode, setActiveNode] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  // Close full screen on escape keypress
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsMaximized(false);
+      }
+    };
+    if (isMaximized) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMaximized]);
+
+  // Sync with prop updates and calculate Dagre layout
+  useEffect(() => {
+    if (!nodesData || !Array.isArray(nodesData) || nodesData.length === 0) {
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
+
+    // Filter valid elements
+    const validNodes = nodesData.filter(node => node && node.id !== undefined && node.id !== null);
+    const validEdges = Array.isArray(edgesData)
+      ? edgesData.filter(edge => edge && edge.source !== undefined && edge.source !== null && edge.target !== undefined && edge.target !== null)
+      : [];
+
+    const rawNodes = validNodes.map(node => ({
+      id: node.id.toString(),
+      type: 'customNode',
+      data: { 
+        label: node.label, 
+        type: node.type, 
+        desc: node.desc || node.description 
+      }
+    }));
+
+    const rawEdges = validEdges.map(edge => ({
+      id: `e-${edge.source}-${edge.target}`,
+      source: edge.source.toString(),
+      target: edge.target.toString(),
+      type: 'smoothstep',
+      animated: true,
+      style: { stroke: '#C5BAB0', strokeWidth: 2, strokeDasharray: '4 4' },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: '#C5BAB0',
+        width: 10,
+        height: 10
+      }
+    }));
+
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(rawNodes, rawEdges);
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+  }, [nodesData, edgesData, setNodes, setEdges]);
+
+  // Clear activeNode if it's no longer present
+  useEffect(() => {
+    if (activeNode) {
+      const exists = nodesData.some(n => n.id.toString() === activeNode.id.toString());
+      if (!exists) {
+        setActiveNode(null);
+      }
+    }
+  }, [nodesData, activeNode]);
+
+  const onNodeClick = (event, node) => {
+    setActiveNode(node);
+  };
+
+  const selectedNodeLabel = activeNode?.data?.label || activeNode?.label;
+  const selectedNodeDesc = activeNode?.data?.desc || activeNode?.desc || activeNode?.description;
+  const selectedNodeType = activeNode?.data?.type || activeNode?.type;
+
+  const mindMapContent = (
+    <div 
+      className="w-full bg-surface-raised border border-border rounded-2xl p-6 shadow-sm overflow-hidden relative flex flex-col justify-between transition-all duration-300 min-h-[360px]"
+    >
+      <div className="flex justify-between items-center mb-4">
+        <div>
+          <h4 className="font-serif text-lg text-text-primary flex items-center gap-2">
+            <Share2 className="w-5 h-5 text-primary" /> Visual Mind Map: <span className="text-walnut font-sans text-base font-semibold">{topic}</span>
+          </h4>
+          <p className="text-xs text-text-muted">Klik node untuk melihat deskripsi dan mengeksplorasi subtopik</p>
+        </div>
+        <div className="flex items-center gap-4">
+          {/* Node Expansion Button */}
+          <button 
+            onClick={() => {
+              if (activeNode && onExpandNode) {
+                onExpandNode(activeNode.id, selectedNodeLabel);
+              }
+            }}
+            disabled={!activeNode || isExpanding}
+            className={`text-xs font-semibold flex items-center gap-1 hover:underline transition-opacity
+              ${!activeNode ? 'opacity-40 cursor-not-allowed' : 'text-primary hover:text-walnut'}
+              ${isExpanding ? 'animate-pulse' : ''}
+            `}
+            title="Kembangkan cabang subtopik ini"
+          >
+            {isExpanding ? (
+              <>
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Mengekspansi...
+              </>
+            ) : (
+              <>
+                <GitFork className="w-3.5 h-3.5" /> Eksplorasi Cabang
+              </>
+            )}
+          </button>
+
+          {/* Full Screen Toggle Button */}
+          <button 
+            onClick={() => setIsMaximized(true)}
+            className="text-xs font-semibold flex items-center gap-1 hover:underline text-text-primary hover:text-walnut transition-all"
+            title="Perbesar tampilan peta konsep"
+          >
+            <Maximize2 className="w-3.5 h-3.5" /> Perbesar Layar
+          </button>
+        </div>
+      </div>
+
+      {/* Canvas */}
+      <div className="relative w-full bg-background rounded-xl border border-border overflow-hidden h-[400px]">
+        {isLoading ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-background z-30">
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full mb-3"
+            />
+            <p className="text-sm font-medium text-text-body">Merajut Peta Konsep AI...</p>
+            <p className="text-xs text-text-muted mt-1">Menyusun keterkaitan antar subtopik</p>
+          </div>
+        ) : nodesData.length === 0 ? (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-background z-30">
+            <Sparkles className="w-8 h-8 text-text-muted mx-auto mb-2 opacity-50" />
+            <p className="text-sm font-medium text-text-body">Belum ada peta konsep</p>
+            <p className="text-xs text-text-muted mt-1">Ketikkan topik belajar Anda atau klik tombol di bawah untuk membuat baru</p>
+            {onRegenerate && (
+              <button 
+                onClick={() => onRegenerate(topic)}
+                className="mt-3 px-3 py-1.5 bg-walnut hover:bg-walnut-muted text-surface-raised rounded-full text-xs font-semibold"
+              >
+                Generate Sekarang
+              </button>
+            )}
+          </div>
+        ) : (
+          <>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              nodeTypes={nodeTypes}
+              onNodeClick={onNodeClick}
+              fitView
+              fitViewOptions={{ padding: 0.15 }}
+              className="w-full h-full"
+            >
+              <Background color="#FAF6F0" gap={16} size={1} />
+              <Controls showInteractive={false} className="!bg-surface-raised !border-border !rounded-lg !shadow-sm" />
+            </ReactFlow>
+
+            {/* Description Panel overlay */}
+            <AnimatePresence>
+              {activeNode && (
+                <motion.div 
+                  className="absolute bottom-2 left-2 right-2 bg-surface-raised border border-border rounded-xl p-3 shadow-md z-20 flex justify-between items-start gap-4"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 15 }}
+                >
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] uppercase font-bold tracking-widest text-primary-light">
+                      {(nodeType => {
+                        if (nodeType === 'root') return 'TOPIK UTAMA';
+                        if (nodeType === 'branch') return 'CABANG UTAMA';
+                        return 'SUB-CABANG';
+                      })(selectedNodeType)}
+                    </span>
+                    <h5 className="font-semibold text-text-primary text-sm mt-0.5 truncate">{selectedNodeLabel}</h5>
+                    <p className="text-xs text-text-body mt-1 leading-relaxed line-clamp-2">
+                      {selectedNodeDesc || 'Tidak ada deskripsi tersedia.'}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 items-end shrink-0">
+                    <button 
+                      onClick={() => setActiveNode(null)}
+                      className="text-[10px] font-bold text-text-muted hover:text-text-primary uppercase tracking-wider"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (onExpandNode) {
+                          onExpandNode(activeNode.id, selectedNodeLabel);
+                        }
+                      }}
+                      disabled={isExpanding}
+                      className="text-[10px] font-bold text-primary hover:text-walnut hover:underline flex items-center gap-1 uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isExpanding ? (
+                        <>
+                          <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Eksplorasi...
+                        </>
+                      ) : (
+                        <>
+                          <GitFork className="w-2.5 h-2.5" /> Eksplorasi
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  if (isMaximized) {
+    return createPortal(
+      <>
+        {/* Backdrop blurred overlay */}
+        <div 
+          className="fixed inset-0 bg-text-primary/45 backdrop-blur-md z-[999] transition-opacity duration-300 cursor-pointer"
+          onClick={() => setIsMaximized(false)}
+        />
+        {/* Maximized card container */}
+        <div 
+          className="fixed inset-4 md:inset-10 z-[1000] shadow-2xl border-2 border-walnut bg-surface-overlay rounded-2xl p-6 overflow-hidden flex flex-col justify-between animate-in fade-in zoom-in-95 duration-200"
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center mb-4 shrink-0">
+            <div>
+              <h4 className="font-serif text-lg text-text-primary flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-primary" /> Visual Mind Map: <span className="text-walnut font-sans text-base font-semibold">{topic}</span>
+              </h4>
+              <p className="text-xs text-text-muted">Klik node untuk melihat deskripsi dan mengeksplorasi subtopik</p>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Node Expansion Button */}
+              <button 
+                onClick={() => {
+                  if (activeNode && onExpandNode) {
+                    onExpandNode(activeNode.id, selectedNodeLabel);
+                  }
+                }}
+                disabled={!activeNode || isExpanding}
+                className={`text-xs font-semibold flex items-center gap-1 hover:underline transition-all duration-200
+                  ${!activeNode ? 'opacity-40 cursor-not-allowed' : 'text-primary hover:text-walnut'}
+                  ${isExpanding ? 'animate-pulse' : ''}
+                `}
+                title="Kembangkan cabang subtopik ini"
+              >
+                {isExpanding ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Mengekspansi...
+                  </>
+                ) : (
+                  <>
+                    <GitFork className="w-3.5 h-3.5" /> Eksplorasi Cabang
+                  </>
+                )}
+              </button>
+
+              {/* Full Screen Minimize Button */}
+              <button 
+                onClick={() => setIsMaximized(false)}
+                className="text-xs font-semibold flex items-center gap-1 hover:underline text-text-primary hover:text-walnut transition-all"
+                title="Kembalikan ukuran normal (Esc)"
+              >
+                <Minimize2 className="w-3.5 h-3.5" /> Kecilkan Layar
+              </button>
+            </div>
+          </div>
+
+          {/* Canvas Wrapper */}
+          <div className="relative w-full flex-1 bg-background rounded-xl border border-border overflow-hidden">
+            {isLoading ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-background z-30">
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                  className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full mb-3"
+                />
+                <p className="text-sm font-medium text-text-body">Merajut Peta Konsep AI...</p>
+                <p className="text-xs text-text-muted mt-1">Menyusun keterkaitan antar subtopik</p>
+              </div>
+            ) : nodesData.length === 0 ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-background z-30">
+                <Sparkles className="w-8 h-8 text-text-muted mx-auto mb-2 opacity-50" />
+                <p className="text-sm font-medium text-text-body">Belum ada peta konsep</p>
+              </div>
+            ) : (
+              <>
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={onNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  nodeTypes={nodeTypes}
+                  onNodeClick={onNodeClick}
+                  fitView
+                  fitViewOptions={{ padding: 0.15 }}
+                  className="w-full h-full"
+                >
+                  <Background color="#FAF6F0" gap={16} size={1} />
+                  <Controls showInteractive={false} className="!bg-surface-raised !border-border !rounded-lg !shadow-sm" />
+                </ReactFlow>
+
+                {/* Description Panel overlay */}
+                <AnimatePresence>
+                  {activeNode && (
+                    <motion.div 
+                      className="absolute bottom-4 left-4 right-4 bg-surface-raised border border-border rounded-xl p-4 shadow-lg z-20 flex justify-between items-start gap-4"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 15 }}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[9px] uppercase font-bold tracking-widest text-primary-light">
+                          {(nodeType => {
+                            if (nodeType === 'root') return 'TOPIK UTAMA';
+                            if (nodeType === 'branch') return 'CABANG UTAMA';
+                            return 'SUB-CABANG';
+                          })(selectedNodeType)}
+                        </span>
+                        <h5 className="font-semibold text-text-primary text-sm mt-0.5 truncate">{selectedNodeLabel}</h5>
+                        <p className="text-xs text-text-body mt-1 leading-relaxed line-clamp-2">
+                          {selectedNodeDesc || 'Tidak ada deskripsi tersedia.'}
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 items-end shrink-0">
+                        <button 
+                          onClick={() => setActiveNode(null)}
+                          className="text-[10px] font-bold text-text-muted hover:text-text-primary uppercase tracking-wider"
+                        >
+                          Tutup
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (onExpandNode) {
+                              onExpandNode(activeNode.id, selectedNodeLabel);
+                            }
+                          }}
+                          disabled={isExpanding}
+                          className="text-[10px] font-bold text-primary hover:text-walnut hover:underline flex items-center gap-1 uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {isExpanding ? (
+                            <>
+                              <RefreshCw className="w-2.5 h-2.5 animate-spin" /> Eksplorasi...
+                            </>
+                          ) : (
+                            <>
+                              <GitFork className="w-2.5 h-2.5" /> Eksplorasi
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
+          </div>
+        </div>
+      </>,
+      document.body
+    );
+  }
+
+  return mindMapContent;
+}
+
 
 // Interactive Latihan Soal (Quiz generator) with animations
 function InteractiveQuiz({ sessionId, onScoreUpdate }) {
@@ -243,13 +658,47 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
   const [score, setScore] = useState(0);
   const [quizData, setQuizData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+
+  // Defensively parse quiz options to array format (BUG-03)
+  const optionsList = useMemo(() => {
+    if (!quizData || !quizData.options) return [];
+    
+    // If it's already an array
+    if (Array.isArray(quizData.options)) {
+      return quizData.options.map((opt) => {
+        if (typeof opt === 'string') {
+          return { key: opt, text: opt };
+        }
+        if (typeof opt === 'object' && opt !== null) {
+          return { 
+            key: opt.key || opt.id || '', 
+            text: opt.text || opt.val || opt.value || '' 
+          };
+        }
+        return { key: '', text: String(opt) };
+      });
+    }
+    
+    // If LLM returned options as a key-value dictionary (e.g. {"A": "Option text"})
+    if (typeof quizData.options === 'object' && quizData.options !== null) {
+      return Object.entries(quizData.options).map(([key, val]) => {
+        if (typeof val === 'object' && val !== null) {
+          return { 
+            key: val.key || val.id || key, 
+            text: val.text || val.val || val.value || '' 
+          };
+        }
+        return { key, text: String(val) };
+      });
+    }
+    
+    return [];
+  }, [quizData]);
 
   const fetchQuizQuestion = async () => {
     setLoading(true);
-    setError(null);
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/quiz?session_id=${sessionId}`);
+      const response = await fetch(`${API_BASE_URL}/api/quiz?session_id=${sessionId}`);
       if (!response.ok) throw new Error("Gagal mengambil kuis");
       const data = await response.json();
       setQuizData(data);
@@ -292,7 +741,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 
     // Submit score to backend
     try {
-      await fetch('http://127.0.0.1:8000/api/quiz/submit', {
+      await fetch(`${API_BASE_URL}/api/quiz/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -371,7 +820,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
             </p>
 
             <div className="flex flex-col gap-2.5">
-              {quizData.options.map((opt) => {
+              {optionsList.map((opt) => {
                 const isSelected = selectedAns === opt.key;
                 const isCorrectOpt = opt.key === quizData.correct;
                 let btnStyle = "border-border bg-surface-raised hover:border-walnut text-text-body";
@@ -498,12 +947,25 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 export default function App() {
   const [activeMode, setActiveMode] = useState('belajar'); // 'belajar', 'rangkuman', 'latihan', 'mindmap'
   const [personality, setPersonality] = useState('😊 Santai & Friendly');
-  const [user_name, setUserName] = useState('Budi');
+  const [user_name, setUserName] = useState(() => localStorage.getItem('scholarbot_user_name') || 'Budi');
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(user_name);
+
+  const handleSaveName = () => {
+    const trimmed = tempName.trim();
+    if (trimmed) {
+      setUserName(trimmed);
+      localStorage.setItem('scholarbot_user_name', trimmed);
+    } else {
+      setTempName(user_name);
+    }
+    setIsEditingName(false);
+  };
   const [sessionId] = useState(() => {
-    const saved = localStorage.getItem("scholarbot_session_id");
+    const saved = sessionStorage.getItem("scholarbot_session_id");
     if (saved) return saved;
     const fresh = `sess-${Math.random().toString(36).substring(2, 11)}`;
-    localStorage.setItem("scholarbot_session_id", fresh);
+    sessionStorage.setItem("scholarbot_session_id", fresh);
     return fresh;
   });
 
@@ -514,6 +976,21 @@ export default function App() {
   
   // Chat input
   const [chatInput, setChatInput] = useState('');
+  // Citation system: which message's source panel is open, and which source is spotlighted
+  const [openSourcePanels, setOpenSourcePanels] = useState([]);
+  const [activeCitation, setActiveCitation] = useState(null); // { msgId, id }
+
+  const handleCitationClick = (msgId, id) => {
+    setOpenSourcePanels(prev => (prev.includes(msgId) ? prev : [...prev, msgId]));
+    setActiveCitation({ msgId, id });
+    // Wait for the panel to expand before scrolling the card into view
+    setTimeout(() => {
+      document.getElementById(`src-${msgId}-${id}`)?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth'
+      });
+    }, 60);
+  };
   const [messages, setMessages] = useState([
     {
       id: "welcome-bot",
@@ -526,6 +1003,172 @@ export default function App() {
   const [uploadedDocs, setUploadedDocs] = useState([]);
   const [selectedPreviewDoc, setSelectedPreviewDoc] = useState(null);
   
+  // Document search states
+  const [docSearchQuery, setDocSearchQuery] = useState('');
+  const [docSearchResults, setDocSearchResults] = useState([]);
+  const [isDocSearching, setIsDocSearching] = useState(false);
+
+  useEffect(() => {
+    setDocSearchQuery('');
+    setDocSearchResults([]);
+    setIsDocSearching(false);
+  }, [selectedPreviewDoc]);
+
+  // Mindmap dynamic states
+  const [mindmapTopic, setMindmapTopic] = useState('Machine Learning');
+  const [mindmapNodes, setMindmapNodes] = useState([
+    { id: '1', label: 'Machine Learning', type: 'root', desc: 'Topik utama yang sedang kita bedah bersama.' },
+    { id: '2', label: 'Supervised', type: 'branch', desc: 'Belajar dari data berlabel. Contoh: Regresi & Klasifikasi.' },
+    { id: '3', label: 'Unsupervised', type: 'branch', desc: 'Mencari struktur tersembunyi tanpa label. Contoh: Clustering.' },
+    { id: '4', label: 'Reinforcement', type: 'branch', desc: 'Sistem belajar mandiri menggunakan reward & punishment.' }
+  ]);
+  const [mindmapEdges, setMindmapEdges] = useState([
+    { source: '1', target: '2' },
+    { source: '1', target: '3' },
+    { source: '1', target: '4' }
+  ]);
+  const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
+  const [isExpandingMindMap, setIsExpandingMindMap] = useState(false);
+
+  // Helper to resolve actual study topic from history, ignoring meta commands
+  const getActualTopic = (fallbackTopic) => {
+    const userMessages = messages.filter(m => m.role === 'user');
+    for (let i = userMessages.length - 1; i >= 0; i--) {
+      const msg = userMessages[i].content.trim();
+      const lower = msg.toLowerCase();
+      const isMetaOnly = [
+        "mindmap", 
+        "mind map", 
+        "peta konsep", 
+        "buat jadi", 
+        "kuis", 
+        "soal", 
+        "latihan", 
+        "reactflow",
+        "pendekatan reactflow"
+      ].some(cmd => lower === cmd || lower === `buat ${cmd}` || lower === `buatkan ${cmd}` || lower === `buatkan saya ${cmd}` || lower === `coba pakai ${cmd}`);
+      
+      const containsMeta = ["mindmap", "mind map", "peta konsep", "buat jadi", "reactflow"].some(cmd => lower.includes(cmd));
+      
+      if (isMetaOnly) {
+        continue;
+      }
+      
+      if (containsMeta) {
+        const cleaned = msg.replace(/(buat jadi|buatkan|buat|coba pakai|pendekatan|reactflow|mindmap|mind map|peta konsep)/gi, "").trim();
+        if (cleaned.length > 2 && cleaned.length < 50) {
+          return cleaned;
+        }
+        continue;
+      }
+      
+      if (msg.length > 2 && msg.length < 60) {
+        return msg;
+      }
+    }
+    return fallbackTopic || 'Machine Learning';
+  };
+
+  const handleGenerateMindMap = async (topic) => {
+    if (!topic || !topic.trim()) return;
+    setIsGeneratingMindMap(true);
+    
+    // Sanitize input topic using getActualTopic helper
+    const sanitizedTopic = getActualTopic(topic);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mindmap/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic: sanitizedTopic, session_id: sessionId })
+      });
+      if (!response.ok) throw new Error("Gagal generate peta konsep");
+      const data = await response.json();
+      if (data.nodes && data.edges) {
+        const rootNode = data.nodes.find(n => n.type === 'root');
+        const finalTopic = rootNode ? rootNode.label : sanitizedTopic;
+        setMindmapTopic(finalTopic);
+        setMindmapNodes(data.nodes);
+        setMindmapEdges(data.edges);
+      }
+    } catch (err) {
+      console.warn("Gagal membuat mindmap, menggunakan fallback:", err);
+      setMindmapTopic(sanitizedTopic);
+      setMindmapNodes([
+        { id: '1', label: sanitizedTopic, type: 'root', desc: `Topik utama tentang ${sanitizedTopic}.` },
+        { id: '2', label: 'Konsep Dasar', type: 'branch', desc: 'Dasar-dasar dan fundamental penting.' },
+        { id: '3', label: 'Penerapan Praktis', type: 'branch', desc: 'Bagaimana konsep ini diterapkan di dunia nyata.' },
+        { id: '4', label: 'Tantangan Utama', type: 'branch', desc: 'Hambatan dan tantangan dalam mempelajari topik ini.' }
+      ]);
+      setMindmapEdges([
+        { source: '1', target: '2' },
+        { source: '1', target: '3' },
+        { source: '1', target: '4' }
+      ]);
+    } finally {
+      setIsGeneratingMindMap(false);
+    }
+  };
+
+  const handleExpandMindMapNode = async (nodeId, nodeLabel) => {
+    if (isExpandingMindMap) return;
+    setIsExpandingMindMap(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mindmap/expand`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: mindmapTopic,
+          node_id: nodeId,
+          node_label: nodeLabel,
+          existing_nodes: mindmapNodes,
+          existing_edges: mindmapEdges,
+          session_id: sessionId
+        })
+      });
+      if (!response.ok) throw new Error("Gagal mengekspansi subtopik");
+      const data = await response.json();
+      if (data.nodes && data.edges) {
+        const existingIds = new Set(mindmapNodes.map(n => n.id.toString()));
+        const newNodes = data.nodes.filter(n => !existingIds.has(n.id.toString()));
+        
+        setMindmapNodes(prev => [...prev, ...newNodes]);
+        setMindmapEdges(prev => [...prev, ...data.edges]);
+      }
+    } catch (err) {
+      console.warn("Gagal mengekspansi subtopik, menggunakan fallback:", err);
+      const newId1 = `sub-${nodeId}-${Date.now()}-1`;
+      const newId2 = `sub-${nodeId}-${Date.now()}-2`;
+      setMindmapNodes(prev => [
+        ...prev,
+        { id: newId1, label: `Detail ${nodeLabel}`, type: 'sub-branch', desc: `Detail lebih lanjut mengenai subtopik ${nodeLabel}.` },
+        { id: newId2, label: `Studi Kasus`, type: 'sub-branch', desc: `Studi kasus nyata tentang penerapan ${nodeLabel}.` }
+      ]);
+      setMindmapEdges(prev => [
+        ...prev,
+        { source: nodeId, target: newId1 },
+        { source: nodeId, target: newId2 }
+      ]);
+    } finally {
+      setIsExpandingMindMap(false);
+    }
+  };
+
+  // Automatically generate or update mind map when activeMode is changed to mindmap
+  useEffect(() => {
+    if (activeMode === 'mindmap') {
+      const userMessages = messages.filter(m => m.role === 'user');
+      if (userMessages.length > 0) {
+        const lastUserMsg = userMessages[userMessages.length - 1].content;
+        handleGenerateMindMap(lastUserMsg);
+      } else {
+        handleGenerateMindMap('Machine Learning');
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMode]);
+
+  
   // Ref for auto scroll
   const chatEndRef = useRef(null);
 
@@ -537,7 +1180,7 @@ export default function App() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8000/api/session/${sessionId}`);
+        const response = await fetch(`${API_BASE_URL}/api/session/${sessionId}`);
         if (response.ok) {
           const data = await response.json();
           if (data.messages && data.messages.length > 0) {
@@ -558,6 +1201,10 @@ export default function App() {
   const handleSendMessage = async (textToSend) => {
     if (!textToSend.trim()) return;
 
+    if (activeMode === 'mindmap') {
+      handleGenerateMindMap(textToSend);
+    }
+
     // 1. User message
     const userMsg = {
       id: `user-${Date.now()}`,
@@ -570,72 +1217,125 @@ export default function App() {
     setChatInput('');
     setIsTyping(true);
 
+    const MAX_RETRIES = 1;
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            message: textToSend,
+            session_id: sessionId,
+            personality: personality,
+            user_name: user_name,
+            mode: activeMode
+          })
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Server error: ${response.status}`);
+        }
+
+        // Retrieve RAG sources from custom header
+        const sourcesHeader = response.headers.get("X-RAG-Sources");
+        let retrievedSources = [];
+        if (sourcesHeader) {
+          try {
+            retrievedSources = JSON.parse(sourcesHeader);
+          } catch (e) {
+            console.warn("Gagal mengurai header RAG sources:", e);
+          }
+        }
+
+        setIsTyping(false);
+
+        const botMsgId = `bot-${Date.now()}`;
+        const botMsg = {
+          id: botMsgId,
+          role: "assistant",
+          content: "",
+          time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+          sources: retrievedSources
+        };
+        setMessages(prev => [...prev, botMsg]);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let done = false;
+
+        while (!done) {
+          const { value, done: readerDone } = await reader.read();
+          done = readerDone;
+          if (value) {
+            const chunk = decoder.decode(value, { stream: !done });
+            setMessages(prev => prev.map(msg => 
+              msg.id === botMsgId 
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            ));
+          }
+        }
+
+        return; // Success — exit retry loop
+
+      } catch (error) {
+        lastError = error;
+        console.warn(`[Chat] Attempt ${attempt + 1} failed:`, error.message);
+
+        if (attempt < MAX_RETRIES) {
+          // Brief delay before retry
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          continue;
+        }
+      }
+    }
+
+    // All retries exhausted — show contextual error
+    setIsTyping(false);
+
+    let errorContent;
+    if (lastError?.name === 'AbortError') {
+      errorContent = '⏳ Waktu permintaan habis. Server LLM mungkin sedang sibuk — coba kirim ulang pesan Anda.';
+    } else if (lastError?.message?.includes('Failed to fetch') || lastError?.message?.includes('NetworkError') || lastError?.message?.includes('ERR_CONNECTION_REFUSED')) {
+      // Backend not reachable at all
+      errorContent = `⚠️ Hubungan terputus. Pastikan FastAPI backend Anda berjalan di ${API_BASE_URL} dengan menjalankan command:\n\`uvicorn api:app --reload\` di folder \`scholarbot\`.`;
+    } else {
+      errorContent = `⚠️ Gagal mendapatkan respons: ${lastError?.message || 'Unknown error'}. Coba kirim ulang pesan Anda.`;
+    }
+
+    setMessages(prev => [...prev, {
+      id: `err-${Date.now()}`,
+      role: "assistant",
+      content: errorContent,
+      time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    }]);
+  };
+
+  // In-document search handler
+  const handleDocSearch = async () => {
+    if (!docSearchQuery.trim() || !selectedPreviewDoc) return;
+    setIsDocSearching(true);
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: textToSend,
-          session_id: sessionId,
-          personality: personality,
-          user_name: user_name,
-          mode: activeMode
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error("Gagal terhubung ke API Server");
+      const res = await fetch(`${API_BASE_URL}/api/session/${sessionId}/search-doc?query=${encodeURIComponent(docSearchQuery)}&filename=${encodeURIComponent(selectedPreviewDoc.filename)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setDocSearchResults(data.results || []);
       }
-
-      // Retrieve RAG sources from custom header
-      const sourcesHeader = response.headers.get("X-RAG-Sources");
-      let retrievedSources = [];
-      if (sourcesHeader) {
-        try {
-          retrievedSources = JSON.parse(sourcesHeader);
-        } catch (e) {
-          console.warn("Gagal mengurai header RAG sources:", e);
-        }
-      }
-
-      setIsTyping(false);
-
-      const botMsgId = `bot-${Date.now()}`;
-      const botMsg = {
-        id: botMsgId,
-        role: "assistant",
-        content: "",
-        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-        sources: retrievedSources
-      };
-      setMessages(prev => [...prev, botMsg]);
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder("utf-8");
-      let done = false;
-
-      while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        done = readerDone;
-        if (value) {
-          const chunk = decoder.decode(value, { stream: !done });
-          setMessages(prev => prev.map(msg => 
-            msg.id === botMsgId 
-              ? { ...msg, content: msg.content + chunk }
-              : msg
-          ));
-        }
-      }
-    } catch (error) {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: `err-${Date.now()}`,
-        role: "assistant",
-        content: `⚠️ Hubungan terputus. Pastikan FastAPI backend Anda berjalan di http://localhost:8000 dengan menjalankan command:\n\`uvicorn api:app --reload\` di folder \`scholarbot\`.`,
-        time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-      }]);
+    } catch (e) {
+      console.warn("Gagal melakukan pencarian dokumen:", e);
+    } finally {
+      setIsDocSearching(false);
     }
   };
 
@@ -649,7 +1349,7 @@ export default function App() {
     ));
 
     try {
-      await fetch(`http://127.0.0.1:8000/api/session/${sessionId}/message/feedback`, {
+      await fetch(`${API_BASE_URL}/api/session/${sessionId}/message/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -665,7 +1365,7 @@ export default function App() {
   // Reset Chat handler
   const handleResetChat = async () => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/session/${sessionId}/reset`, {
+      await fetch(`${API_BASE_URL}/api/session/${sessionId}/reset`, {
         method: 'POST'
       });
     } catch (e) {
@@ -694,7 +1394,7 @@ export default function App() {
       formData.append("session_id", sessionId);
 
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/upload', {
+        const response = await fetch(`${API_BASE_URL}/api/upload`, {
           method: 'POST',
           body: formData
         });
@@ -715,7 +1415,7 @@ export default function App() {
   // Delete individual uploaded document
   const handleDeleteDoc = async (filename) => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/session/${sessionId}/doc/${encodeURIComponent(filename)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/session/${sessionId}/doc/${encodeURIComponent(filename)}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -733,7 +1433,7 @@ export default function App() {
   // Clear uploaded documents
   const handleClearDocs = async () => {
     try {
-      await fetch(`http://127.0.0.1:8000/api/session/${sessionId}/clear-docs`, {
+      await fetch(`${API_BASE_URL}/api/session/${sessionId}/clear-docs`, {
         method: 'POST'
       });
       setUploadedDocs([]);
@@ -752,7 +1452,7 @@ export default function App() {
         <div className="flex flex-col gap-6 overflow-y-auto pr-1">
           {/* Logo & title */}
           <div className="flex items-center gap-3 pb-5 border-b border-divider">
-            <div className="w-11 h-11 rounded-xl bg-surface-raised border border-border flex items-center justify-center text-walnut shadow-sm">
+            <div className="w-11 h-11 rounded-xl bg-surface-raised border border-border flex items-center justify-center shadow-sm text-walnut">
               <BookOpen className="w-6 h-6 stroke-[1.8]" />
             </div>
             <div>
@@ -764,13 +1464,53 @@ export default function App() {
           </div>
 
           {/* Profile mini-card */}
-          <div className="flex items-center gap-3 p-3 bg-surface-raised border border-border rounded-2xl shadow-sm">
-            <div className="w-9 h-9 rounded-full bg-divider border border-border text-walnut flex items-center justify-center font-serif text-lg font-semibold">
+          <div className="group flex items-center gap-3 p-3 bg-surface-raised border border-border rounded-2xl shadow-sm relative transition-all duration-300 hover:border-walnut/40">
+            <div className="w-9 h-9 rounded-full bg-divider border border-border text-walnut flex items-center justify-center font-serif text-lg font-semibold shrink-0">
               {user_name[0]?.toUpperCase() || 'S'}
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold text-text-primary leading-tight">Halo, {user_name}!</span>
-              <span className="text-[10px] text-text-muted mt-0.5">Semangat belajar hari ini!</span>
+            <div className="flex-1 min-w-0">
+              {isEditingName ? (
+                <input
+                  type="text"
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  onBlur={handleSaveName}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveName();
+                    if (e.key === 'Escape') {
+                      setTempName(user_name);
+                      setIsEditingName(false);
+                    }
+                  }}
+                  className="w-full bg-background border border-walnut rounded px-1.5 py-0.5 text-xs text-text-primary focus:outline-none font-semibold"
+                  autoFocus
+                  maxLength={15}
+                />
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span 
+                    onClick={() => {
+                      setTempName(user_name);
+                      setIsEditingName(true);
+                    }}
+                    className="text-xs font-semibold text-text-primary leading-tight truncate cursor-pointer hover:text-walnut hover:underline flex items-center gap-1"
+                    title="Klik untuk mengubah nama"
+                  >
+                    Halo, {user_name}!
+                  </span>
+                  <button
+                    onClick={() => {
+                      setTempName(user_name);
+                      setIsEditingName(true);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-walnut transition-opacity p-0.5"
+                    title="Ubah nama"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+              <span className="text-[10px] text-text-muted mt-0.5 block">Semangat belajar hari ini!</span>
             </div>
           </div>
 
@@ -796,72 +1536,86 @@ export default function App() {
             <label className="text-[10px] uppercase font-bold tracking-wider text-text-muted px-1 mb-1.5">Menu Utama</label>
             
             {/* Belajar */}
-            <button 
+            <motion.button 
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveMode('belajar')}
               className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left
                 ${activeMode === 'belajar' 
                   ? 'bg-walnut text-surface-raised shadow-sm font-semibold' 
-                  : 'text-text-muted hover:bg-divider hover:text-text-primary hover:translate-x-1'
+                  : 'text-text-muted hover:bg-divider hover:text-text-primary'
                 }`}
             >
               <Compass className="w-4 h-4" />
               <span>Belajar</span>
-            </button>
+            </motion.button>
 
             {/* Rangkuman */}
-            <button 
+            <motion.button 
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveMode('rangkuman')}
               className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left
                 ${activeMode === 'rangkuman' 
                   ? 'bg-walnut text-surface-raised shadow-sm font-semibold' 
-                  : 'text-text-muted hover:bg-divider hover:text-text-primary hover:translate-x-1'
+                  : 'text-text-muted hover:bg-divider hover:text-text-primary'
                 }`}
             >
               <FileText className="w-4 h-4" />
               <span>Rangkuman</span>
-            </button>
+            </motion.button>
 
             {/* Latihan Soal */}
-            <button 
+            <motion.button 
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveMode('latihan')}
               className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left
                 ${activeMode === 'latihan' 
                   ? 'bg-walnut text-surface-raised shadow-sm font-semibold' 
-                  : 'text-text-muted hover:bg-divider hover:text-text-primary hover:translate-x-1'
+                  : 'text-text-muted hover:bg-divider hover:text-text-primary'
                 }`}
             >
               <Award className="w-4 h-4" />
               <span>Latihan Soal</span>
-            </button>
+            </motion.button>
 
             {/* Mind Map */}
-            <button 
+            <motion.button 
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={() => setActiveMode('mindmap')}
               className={`w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left
                 ${activeMode === 'mindmap' 
                   ? 'bg-walnut text-surface-raised shadow-sm font-semibold' 
-                  : 'text-text-muted hover:bg-divider hover:text-text-primary hover:translate-x-1'
+                  : 'text-text-muted hover:bg-divider hover:text-text-primary'
                 }`}
             >
               <Share2 className="w-4 h-4" />
               <span>Mind Map</span>
-            </button>
+            </motion.button>
 
             {/* Reset Chat Button - ELEGANT RED HIGHLIGHT */}
-            <button 
+            <motion.button 
+              whileHover={{ x: 4 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleResetChat}
-              className="w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left text-red-500 hover:bg-red-50 hover:translate-x-1 mt-2 border border-dashed border-red-200/50"
+              className="w-full py-2.5 px-3.5 rounded-xl text-xs font-semibold transition-all flex items-center gap-3 text-left text-red-500 hover:bg-red-50 mt-2 border border-dashed border-red-200/50"
             >
               <Trash2 className="w-4 h-4" />
               <span>Reset Chat</span>
-            </button>
+            </motion.button>
           </div>
 
           {/* RAG Upload Area inside sidebar */}
           <div className="flex flex-col gap-2 pt-2 border-t border-divider">
             <label className="text-[10px] uppercase font-bold tracking-wider text-text-muted px-1">Unggah Dokumen (RAG)</label>
             
-            <div className="relative border border-dashed border-border rounded-xl bg-surface-raised p-3 flex flex-col items-center justify-center text-center cursor-pointer hover:border-walnut transition-colors group">
+            <motion.div 
+              whileHover={{ scale: 1.015, borderColor: '#4A3728' }}
+              whileTap={{ scale: 0.985 }}
+              className="relative border border-dashed border-border rounded-xl bg-surface-raised p-3 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group"
+            >
               <input 
                 type="file" 
                 multiple
@@ -872,31 +1626,40 @@ export default function App() {
               <Upload className="w-5 h-5 text-text-muted mb-1.5 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-semibold text-text-primary">Unggah berkas PDF/TXT</span>
               <span className="text-[9px] text-text-muted mt-0.5">Maks 200MB</span>
-            </div>
+            </motion.div>
 
             {uploadedDocs.length > 0 && (
-              <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto mt-1 bg-surface-raised border border-border p-2 rounded-xl">
-                {uploadedDocs.map((doc, i) => (
-                  <div key={i} className="flex justify-between items-center bg-background px-2 py-1.5 rounded-lg border border-border text-[10px] hover:border-walnut transition-colors group/doc">
-                    <span 
-                      onClick={() => setSelectedPreviewDoc(doc)}
-                      className="truncate font-medium text-text-primary max-w-[130px] cursor-pointer hover:underline flex items-center gap-1.5"
-                      title="Klik untuk pratinjau konten"
+              <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto mt-1 bg-surface-raised border border-border p-2 rounded-xl scrollbar-thin">
+                <AnimatePresence initial={false}>
+                  {uploadedDocs.map((doc) => (
+                    <motion.div 
+                      key={doc.filename}
+                      initial={{ opacity: 0, height: 0, y: -4 }}
+                      animate={{ opacity: 1, height: 'auto', y: 0 }}
+                      exit={{ opacity: 0, height: 0, y: -4 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex justify-between items-center bg-background px-2 py-1.5 rounded-lg border border-border text-[10px] hover:border-walnut transition-colors group/doc overflow-hidden"
                     >
-                      📄 {doc.filename}
-                    </span>
-                    <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-[8px] text-text-muted">{doc.size}</span>
-                      <button 
-                        onClick={() => handleDeleteDoc(doc.filename)}
-                        className="text-text-muted hover:text-red-500 opacity-0 group-hover/doc:opacity-100 transition-opacity p-0.5"
-                        title="Hapus dokumen"
+                      <span 
+                        onClick={() => setSelectedPreviewDoc(doc)}
+                        className="truncate font-medium text-text-primary max-w-[130px] cursor-pointer hover:underline flex items-center gap-1.5"
+                        title="Klik untuk pratinjau konten"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        📄 {doc.filename}
+                      </span>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        <span className="text-[8px] text-text-muted">{doc.size}</span>
+                        <button 
+                          onClick={() => handleDeleteDoc(doc.filename)}
+                          className="text-text-muted hover:text-red-500 opacity-0 group-hover/doc:opacity-100 transition-opacity p-0.5"
+                          title="Hapus dokumen"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 <button 
                   onClick={handleClearDocs}
                   className="text-[9px] text-red-500 font-bold hover:underline self-end mt-1"
@@ -968,12 +1731,13 @@ export default function App() {
                   <div className="grid grid-cols-3 gap-4">
                     {/* Card 1 */}
                     <motion.div 
-                      whileHover={{ y: -4, shadow: "shadow-md" }}
-                      className="bg-surface-raised border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all hover:border-walnut"
+                      whileHover={{ y: -6 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-tr from-surface-raised to-surface/20 border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all duration-300 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(139,105,20,0.06)]"
                       onClick={() => handleSendMessage("Apa itu Machine Learning?")}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full bg-blue-50/70 border border-blue-100 text-blue-700 flex items-center justify-center">
                           <Compass className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col">
@@ -983,7 +1747,12 @@ export default function App() {
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
-                          <div className="h-full bg-walnut rounded-full transition-all duration-500" style={{ width: `${mlProgress}%` }} />
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${mlProgress}%` }}
+                            transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.1 }}
+                            className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
+                          />
                         </div>
                         <span className="text-[9px] text-text-muted">Terakhir dipelajari baru saja</span>
                       </div>
@@ -991,12 +1760,13 @@ export default function App() {
 
                     {/* Card 2 */}
                     <motion.div 
-                      whileHover={{ y: -4, shadow: "shadow-md" }}
-                      className="bg-surface-raised border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all hover:border-walnut"
+                      whileHover={{ y: -6 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-tr from-surface-raised to-surface/20 border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all duration-300 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(139,105,20,0.06)]"
                       onClick={() => handleSendMessage("Buat kuis Stoikiometri Kimia")}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full bg-emerald-50/70 border border-emerald-100 text-emerald-700 flex items-center justify-center">
                           <BookOpen className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col">
@@ -1006,7 +1776,12 @@ export default function App() {
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
-                          <div className="h-full bg-walnut rounded-full transition-all duration-500" style={{ width: `${chemProgress}%` }} />
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${chemProgress}%` }}
+                            transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.2 }}
+                            className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
+                          />
                         </div>
                         <span className="text-[9px] text-text-muted">Terakhir dipelajari baru saja</span>
                       </div>
@@ -1014,12 +1789,13 @@ export default function App() {
 
                     {/* Card 3 */}
                     <motion.div 
-                      whileHover={{ y: -4, shadow: "shadow-md" }}
-                      className="bg-surface-raised border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all hover:border-walnut"
+                      whileHover={{ y: -6 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-tr from-surface-raised to-surface/20 border border-border rounded-2xl p-4 shadow-sm flex flex-col justify-between h-32 cursor-pointer transition-all duration-300 hover:border-primary/50 hover:shadow-[0_12px_24px_rgba(139,105,20,0.06)]"
                       onClick={() => handleSendMessage("Ceritakan Perang Dunia II")}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-amber-50 text-amber-700 flex items-center justify-center">
+                        <div className="w-9 h-9 rounded-full bg-amber-50/70 border border-amber-100 text-amber-700 flex items-center justify-center">
                           <FileText className="w-5 h-5" />
                         </div>
                         <div className="flex flex-col">
@@ -1029,7 +1805,12 @@ export default function App() {
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
-                          <div className="h-full bg-walnut rounded-full transition-all duration-500" style={{ width: `${historyProgress}%` }} />
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${historyProgress}%` }}
+                            transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.3 }}
+                            className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
+                          />
                         </div>
                         <span className="text-[9px] text-text-muted">Terakhir dipelajari 3 hari lalu</span>
                       </div>
@@ -1075,8 +1856,9 @@ export default function App() {
                     return (
                       <motion.div 
                         key={msg.id || index}
-                        initial={{ opacity: 0, y: 15 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        initial={{ opacity: 0, y: 20, scale: 0.97 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ type: "spring", stiffness: 130, damping: 15 }}
                         className={`flex gap-4 ${isBot ? '' : 'flex-row-reverse'}`}
                       >
                         {/* Avatar */}
@@ -1090,27 +1872,42 @@ export default function App() {
                         <div className="flex flex-col max-w-[70%]">
                           <div className={`p-4 rounded-2xl border text-xs leading-relaxed shadow-sm
                             ${isBot 
-                              ? 'bg-surface-raised border-border text-text-body font-serif' 
-                              : 'bg-surface border-border text-text-primary'
+                              ? 'bg-gradient-to-br from-surface-raised to-surface/30 border-border text-text-body font-serif shadow-[0_4px_16px_rgba(44,36,23,0.02)]' 
+                              : 'bg-surface border-border text-text-primary shadow-[0_2px_8px_rgba(44,36,23,0.02)]'
                             }`}
                           >
                             {/* Simple Markdown support simulator */}
                             {isBot ? (
                               <div className="flex flex-col gap-2">
                                 {msg.content.split('\n\n').map((para, pIdx) => {
+                                  const citeProps = {
+                                    sourceCount: msg.sources?.length || 0,
+                                    activeId: activeCitation?.msgId === msg.id ? activeCitation.id : null,
+                                    onCite: (id) => handleCitationClick(msg.id, id)
+                                  };
                                   if (para.startsWith('### ')) {
-                                    return <h4 key={pIdx} className="font-bold text-sm text-text-primary font-serif mt-1">{para.replace('### ', '')}</h4>;
+                                    return (
+                                      <h4 key={pIdx} className="font-bold text-sm text-text-primary font-serif mt-1">
+                                        <CitationText text={para.replace('### ', '')} {...citeProps} />
+                                      </h4>
+                                    );
                                   }
                                   if (para.startsWith('*   ')) {
                                     return (
                                       <ul key={pIdx} className="list-disc pl-5 flex flex-col gap-1">
                                         {para.split('\n').map((li, lIdx) => (
-                                          <li key={lIdx}>{li.replace('*   ', '').replace('**', '').replace('**', '')}</li>
+                                          <li key={lIdx}>
+                                            <CitationText text={li.replace('*   ', '')} {...citeProps} />
+                                          </li>
                                         ))}
                                       </ul>
                                     );
                                   }
-                                  return <p key={pIdx} dangerouslySetInnerHTML={{__html: para.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}} />;
+                                  return (
+                                    <p key={pIdx}>
+                                      <CitationText text={para} {...citeProps} />
+                                    </p>
+                                  );
                                 })}
                               </div>
                             ) : (
@@ -1119,9 +1916,19 @@ export default function App() {
                           </div>
 
                           {/* ─── RAG SOURCE VISUALIZER & RELEVANCE INDICATOR (v3.2 ROADMAP) ─── */}
-                          {isBot && msg.sources && msg.sources.length > 0 && (
+                          {isBot && msg.sources && msg.sources.length > 0 && (() => {
+                            const citedIds = parseCitationIds(msg.content, msg.sources.length);
+                            return (
                             <div className="mt-2 border border-border bg-surface rounded-xl overflow-hidden shadow-sm max-w-full">
-                              <details className="group">
+                              <details
+                                className="group"
+                                open={openSourcePanels.includes(msg.id)}
+                                onToggle={(e) => setOpenSourcePanels(prev => (
+                                  e.target.open
+                                    ? (prev.includes(msg.id) ? prev : [...prev, msg.id])
+                                    : prev.filter(id => id !== msg.id)
+                                ))}
+                              >
                                 <summary className="flex items-center justify-between p-2.5 bg-surface-raised cursor-pointer hover:bg-divider transition-colors select-none text-[10px] font-bold text-walnut">
                                   <div className="flex items-center gap-1.5">
                                     <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -1129,55 +1936,87 @@ export default function App() {
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <span className="text-[8px] px-2 py-0.5 rounded-full bg-walnut/10 text-walnut font-bold">
+                                      {citedIds.length > 0
+                                        ? `${citedIds.length} dikutip di jawaban`
+                                        : 'Belum ada kutipan inline'}
+                                    </span>
+                                    <span className="text-[8px] px-2 py-0.5 rounded-full bg-walnut/10 text-walnut font-bold">
                                       Relevansi: {Math.min(100, Math.round((msg.sources[0]?.score || 0) * 100))}%
                                     </span>
                                     <ChevronDown className="w-3 h-3 text-text-muted group-open:rotate-180 transition-transform" />
                                   </div>
                                 </summary>
                                 <div className="p-3 border-t border-divider bg-surface flex flex-col gap-2 max-h-48 overflow-y-auto scrollbar-thin">
-                                  {msg.sources.map((src, sIdx) => (
-                                    <div key={sIdx} className="p-2.5 rounded-lg border border-border bg-surface-raised/40 hover:border-walnut transition-colors">
+                                  {msg.sources.map((src, sIdx) => {
+                                    const citeId = src.id ?? sIdx + 1;
+                                    const isCited = citedIds.includes(citeId);
+                                    const isActive = activeCitation?.msgId === msg.id && activeCitation.id === citeId;
+                                    return (
+                                    <div
+                                      key={sIdx}
+                                      id={`src-${msg.id}-${citeId}`}
+                                      className={`p-2.5 rounded-lg border bg-surface-raised/40 transition-colors
+                                        ${isActive ? 'border-walnut ring-1 ring-walnut' : 'border-border hover:border-walnut'}
+                                        ${isCited ? '' : 'opacity-60'}`}
+                                    >
                                       <div className="flex justify-between items-center mb-1 text-[9px]">
-                                        <span className="font-bold text-text-primary">📄 {src.source}</span>
+                                        <span className="flex items-center gap-1.5 font-bold text-text-primary">
+                                          <span className="inline-flex items-center justify-center min-w-[15px] h-[15px] px-1 rounded-full bg-walnut text-surface-raised text-[8px] leading-none">
+                                            {citeId}
+                                          </span>
+                                          📄 {src.source}
+                                          {typeof src.chunk_index === 'number' && (
+                                            <span className="font-normal text-text-muted">· bagian {src.chunk_index + 1}</span>
+                                          )}
+                                        </span>
                                         <span className="text-[8px] font-semibold text-walnut-muted">
-                                          Skor Relevansi: {src.score?.toFixed(3)}
+                                          {isCited ? 'Dikutip · ' : 'Tidak dikutip · '}
+                                          Skor {src.score?.toFixed(3)}
                                         </span>
                                       </div>
-                                      <p className="text-[9px] leading-relaxed text-text-body font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-border/50 max-h-24 overflow-y-auto animate-pulse-subtle">
+                                      <p className="text-[9px] leading-relaxed text-text-body font-mono whitespace-pre-wrap bg-background/50 p-2 rounded border border-border/50 max-h-24 overflow-y-auto">
                                         {src.content}
                                       </p>
                                     </div>
-                                  ))}
+                                    );
+                                  })}
                                 </div>
                               </details>
                             </div>
-                          )}
+                            );
+                          })()}
                           
                           {/* Timestamp and feedback actions */}
                           <div className={`flex items-center gap-3 mt-1.5 text-[9px] text-text-muted ${!isBot ? 'justify-end' : ''}`}>
                             <span>{msg.time}</span>
                             {isBot && (
                               <>
-                                <button 
+                                <motion.button 
+                                  whileHover={{ scale: 1.04 }}
+                                  whileTap={{ scale: 0.92 }}
                                   onClick={() => {
                                     navigator.clipboard.writeText(msg.content);
                                   }}
                                   className="hover:text-text-primary transition-colors flex items-center gap-0.5 focus:text-walnut"
                                 >
                                   📋 Salin
-                                </button>
-                                <button 
+                                </motion.button>
+                                <motion.button 
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.88 }}
                                   onClick={() => handleMessageFeedback(msg.id, "like")}
                                   className={`transition-colors flex items-center gap-0.5 ${msg.feedback === 'like' ? 'text-walnut font-bold scale-105' : 'hover:text-text-primary'}`}
                                 >
                                   👍 {msg.feedback === 'like' ? 'Berguna!' : 'Berguna'}
-                                </button>
-                                <button 
+                                </motion.button>
+                                <motion.button 
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.88 }}
                                   onClick={() => handleMessageFeedback(msg.id, "dislike")}
                                   className={`transition-colors flex items-center gap-0.5 ${msg.feedback === 'dislike' ? 'text-red-500 font-bold scale-105' : 'hover:text-text-primary'}`}
                                 >
                                   👎 {msg.feedback === 'dislike' ? 'Kurang!' : 'Kurang'}
-                                </button>
+                                </motion.button>
                               </>
                             )}
                           </div>
@@ -1279,7 +2118,15 @@ export default function App() {
                 exit={{ opacity: 0, height: 0 }}
                 className="max-w-3xl mx-auto mt-6"
               >
-                <InteractiveMindMap topic={messages[messages.length - 1]?.content.includes('Machine Learning') ? 'Machine Learning' : 'Topik Belajar'} />
+                <InteractiveMindMap 
+                  topic={mindmapTopic}
+                  nodesData={mindmapNodes}
+                  edgesData={mindmapEdges}
+                  isLoading={isGeneratingMindMap}
+                  isExpanding={isExpandingMindMap}
+                  onExpandNode={handleExpandMindMapNode}
+                  onRegenerate={handleGenerateMindMap}
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -1377,6 +2224,53 @@ export default function App() {
 
               {/* Preview Body */}
               <div className="p-6 overflow-y-auto flex-1 bg-surface scrollbar-thin">
+                {/* Search Bar */}
+                <div className="mb-5 bg-surface-raised border border-border p-3.5 rounded-xl flex flex-col gap-2.5 shadow-sm">
+                  <span className="text-[10px] font-bold text-walnut uppercase tracking-widest">Pencarian Konsep Dalam Dokumen</span>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      value={docSearchQuery}
+                      onChange={(e) => setDocSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleDocSearch()}
+                      placeholder="Cari kata kunci, topik, atau konsep..."
+                      className="flex-1 bg-background border border-border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-walnut placeholder-text-subtle"
+                    />
+                    <button 
+                      onClick={handleDocSearch}
+                      disabled={isDocSearching}
+                      className="px-4 py-2 bg-walnut hover:bg-walnut-light text-surface-raised rounded-xl text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                    >
+                      {isDocSearching ? (
+                        <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-surface-raised" />
+                      ) : (
+                        <Search className="w-3.5 h-3.5" />
+                      )}
+                      <span>Cari</span>
+                    </button>
+                  </div>
+                  
+                  {docSearchResults.length > 0 && (
+                    <div className="flex flex-col gap-2 max-h-40 overflow-y-auto mt-2 scrollbar-thin border-t border-divider pt-2">
+                      <span className="text-[9px] font-bold text-secondary">DITEMUKAN {docSearchResults.length} BAGIAN YANG RELEVAN:</span>
+                      {docSearchResults.map((res, rIdx) => (
+                        <div key={rIdx} className="p-2.5 rounded-lg border border-border bg-background hover:border-walnut transition-colors">
+                          <div className="flex justify-between items-center mb-1 text-[8px] font-semibold text-text-muted">
+                            <span>Bagian #{res.chunk_index + 1}</span>
+                            <span className="text-walnut">Relevansi: {Math.round(res.score * 100)}%</span>
+                          </div>
+                          <p className="text-[9px] leading-relaxed text-text-body font-mono whitespace-pre-wrap">
+                            {res.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {docSearchQuery && docSearchResults.length === 0 && !isDocSearching && (
+                    <span className="text-[9px] text-text-subtle italic">Tidak ada kecocokan. Coba konsep lainnya.</span>
+                  )}
+                </div>
+
                 <span className="text-[10px] font-bold text-walnut uppercase tracking-widest block mb-3">Pratinjau Ekstraksi Teks</span>
                 <div className="bg-background border border-border rounded-xl p-4 text-xs leading-relaxed text-text-body font-mono whitespace-pre-wrap max-h-80 overflow-y-auto bg-surface-raised/40">
                   {selectedPreviewDoc.preview || "Tidak ada konten teks yang dapat diekstrak atau dokumen kosong."}

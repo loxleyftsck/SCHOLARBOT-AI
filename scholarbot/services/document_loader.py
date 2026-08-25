@@ -59,12 +59,15 @@ def extract_pdf(file_bytes: bytes, filename: str = "") -> str:
         ValueError: If PDF extraction fails or PyPDF2 not installed
     """
     try:
-        import PyPDF2
+        import pypdf as pdf_lib
     except ImportError:
-        raise ValueError(
-            "PyPDF2 belum terinstall. Install dengan: pip install PyPDF2\n"
-            "Atau gunakan file TXT sebagai alternatif."
-        )
+        try:
+            import PyPDF2 as pdf_lib
+        except ImportError:
+            raise ValueError(
+                "pypdf atau PyPDF2 belum terinstall. Install dengan: pip install pypdf\n"
+                "Atau gunakan file TXT sebagai alternatif."
+            )
 
     if not file_bytes:
         raise ValueError(f"File {filename} kosong.")
@@ -72,7 +75,7 @@ def extract_pdf(file_bytes: bytes, filename: str = "") -> str:
     try:
         # Create PDF reader from bytes
         pdf_file = io.BytesIO(file_bytes)
-        reader = PyPDF2.PdfReader(pdf_file)
+        reader = pdf_lib.PdfReader(pdf_file)
 
         # Validate PDF has pages
         if len(reader.pages) == 0:
@@ -95,9 +98,8 @@ def extract_pdf(file_bytes: bytes, filename: str = "") -> str:
 
         return "\n\n".join(text_parts)
 
-    except PyPDF2.errors.PdfReadError as e:
-        raise ValueError(f"File {filename} bukan PDF valid atau rusak: {e}")
     except Exception as e:
+        # Handle library-specific or general PDF read errors safely
         raise ValueError(f"Gagal ekstrak PDF {filename}: {e}")
 
 

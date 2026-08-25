@@ -15,3 +15,9 @@ scholarbot-web/dist/
 scholarbot-web/.env
 scholarbot-web/*.env
 scholarbot-web/.DS_Store
+
+# Tooling / editor / local artifacts
+.vscode/
+.claude/
+.ppt-build/
+*.backup

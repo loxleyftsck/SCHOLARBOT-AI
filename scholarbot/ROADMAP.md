@@ -69,9 +69,9 @@ Chatbot  Refactor Pipeline Release  (planned)   (future)
 | Feature | Description | Complexity | Status |
 |---------|-------------|------------|--------|
 | Cross-document retrieval | Score and merge results from multiple documents | Medium | ✅ Done |
-| Semantic chunking | Detect natural topic boundaries instead of fixed size | High | |
+| Semantic chunking | Detect natural topic boundaries instead of fixed size | High | ✅ Done |
 | Document preview | Show uploaded document content in sidebar | Low | ✅ Done |
-| In-document search | Search within uploaded documents | Medium | |
+| In-document search | Search within uploaded documents | Medium | ✅ Done |
 
 ### Priority 2 — UI/UX Enhancements
 | Feature | Description | Complexity | Status |
@@ -94,12 +94,12 @@ Chatbot  Refactor Pipeline Release  (planned)   (future)
 v3.2 Tasks
 ├── RAG Pipeline
 │   ├── [x] Implement cross-document scoring (v3.2)
-│   ├── [ ] Add semantic boundary detection
+│   ├── [x] Add semantic boundary detection (v3.2)
 │   ├── [ ] Build document summarization module
 │   └── [ ] Improve re-ranking algorithm
 ├── UI Components
 │   ├── [x] Document preview panel (v3.2)
-│   ├── [ ] In-document search widget
+│   ├── [x] In-document search widget (v3.2)
 │   ├── [x] Retrieval confidence display (v3.2)
 │   └── [x] Chunk highlighting in response (v3.2)
 └── Performance
@@ -121,7 +121,7 @@ v3.2 Tasks
 | Cosine Similarity NumPy | Semantic search with zero-install local math | NumPy + HF Inference | ✅ Done |
 | Embedding model | sentence-transformers/all-MiniLM-L6-v2 | HF inference | ✅ Done |
 | Hybrid search | Combine keyword + semantic retrieval | Custom | ✅ Done |
-| Citation system | Inline references to document sections | Custom | |
+| Citation system | Inline references to document sections | Custom | ✅ Done |
 
 ### Phase 2 — Multi-Agent System
 | Feature | Description | Status |

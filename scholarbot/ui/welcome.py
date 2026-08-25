@@ -75,7 +75,10 @@ def render_native_welcome(user_name: str = ""):
                 
         if img_path:
             # Render the gorgeous 3D mascot image beautifully styled with rounded corners!
-            st.image(img_path, use_container_width=True)
+            try:
+                st.image(img_path, use_container_width=True)
+            except TypeError:
+                st.image(img_path, use_column_width=True)
         else:
             # Load the robot mascot SVG from assets/icons/mascot.svg or use a fallback
             try:

@@ -35,6 +35,9 @@ from .rag_context import (
     build_rag_user_message,
     should_use_rag,
     get_rag_context_summary,
+    build_citation_map,
+    extract_citation_ids,
+    strip_invalid_citations,
 )
 
 __all__ = [
@@ -48,6 +51,7 @@ __all__ = [
     # RAG context
     "build_rag_system_prompt", "build_rag_user_message",
     "should_use_rag", "get_rag_context_summary",
+    "build_citation_map", "extract_citation_ids", "strip_invalid_citations",
     # Memory manager
     "SESSION_DEFAULTS",
     "init_defaults",

@@ -215,3 +215,30 @@ class TestPayloadValidation:
         ]
         valid, error = validate_payload(messages)
         assert valid is False
+
+
+class TestTopicExtraction:
+    """Test topic extraction from user inputs."""
+
+    def test_pure_meta_commands_return_none(self):
+        """Pure meta intents/commands with no academic topic should return None."""
+        assert extract_topic("mindmap") is None
+        assert extract_topic("buat peta konsep") is None
+        assert extract_topic("buat kuis") is None
+        assert extract_topic("latihan") is None
+
+    def test_extract_from_mindmap_sentence_triggers(self):
+        """Should extract the actual academic topic from compound mindmap commands."""
+        assert extract_topic("buatkan mindmap tentang Stoikiometri Kimia") == "Stoikiometri Kimia"
+        assert extract_topic("buatkan mindmap tentang reinforcement learning") == "reinforcement learning"
+        assert extract_topic("peta konsep mengenai Fotosintesis Tumbuhan") == "Fotosintesis Tumbuhan"
+
+    def test_extract_without_explicit_prepositions(self):
+        """Should clean meta words and extract short topics even without explicit prepositions."""
+        assert extract_topic("buatkan mindmap Stoikiometri Kimia") == "Stoikiometri Kimia"
+        assert extract_topic("buat peta konsep Machine Learning") == "Machine Learning"
+
+    def test_fallback_short_text(self):
+        """Should return short messages as topics verbatim if no triggers match."""
+        assert extract_topic("Persamaan Kuadrat") == "Persamaan Kuadrat"
+
