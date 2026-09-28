@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ScholarBot AI — Belajar dari materimu sendiri</title>
+<meta name="description" content="Asisten belajar AI yang membaca PDF dan catatanmu, menjawab dengan bahasa yang kamu pahami, lalu menunjukkan potongan sumbernya supaya bisa kamu periksa." />
+<meta name="theme-color" content="#FAF6F0" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="ScholarBot AI — Belajar dari materimu sendiri" />
+<meta property="og:description" content="Asisten belajar AI dengan RAG ringan, semantic search, dan sitasi inline yang bisa ditelusuri ke potongan dokumen aslinya." />
+<meta property="og:image" content="./assets/img/mascot.png" />
+
+<link rel="icon" href="./assets/img/mascot.png" />
+<link rel="stylesheet" href="./assets/fonts/fonts.css" />
+<link rel="stylesheet" href="./styles.css" />
+<script>document.documentElement.classList.add('js');</script>
+</head>
+<body>
+<a class="skip" href="#utama">Lompat ke konten utama</a>
+
+<div class="grain" aria-hidden="true"></div>
+<div class="rule-progress" aria-hidden="true"><span id="progress"></span></div>
+
+<header class="nav">
+  <a class="nav__brand" href="#top">
+    <img src="./assets/img/mascot.png" alt="" width="40" height="29" />
+    <span>ScholarBot<span class="nav__dim"> AI</span></span>
+  </a>
+  <nav class="nav__links" aria-label="Navigasi utama">
+    <a href="#masalah">Masalah</a>
+    <a href="#fitur">Fitur</a>
+    <a href="#alur">Cara kerja</a>
+    <a href="#sitasi">Sitasi</a>
+  </nav>
+  <a class="btn btn--ghost nav__cta" href="https://github.com/loxleyftsck/SCHOLARBOT-AI" target="_blank" rel="noopener">
+    Kode sumber
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+  </a>
+</header>
+
+<main id="utama">
+
+<!-- ─────────────────────────────  HERO  ───────────────────────────── -->
+<section class="hero" id="top">
+  <div class="hero__text">
+    <p class="eyebrow reveal">AI Learning Workspace <span class="eyebrow__sep">/</span> v3.2</p>
+
+    <h1 class="display">
+      <span class="line"><span>Belajar dari</span></span>
+      <span class="line"><span>materimu <span class="nowrap"><em>sendiri</em><a href="#sitasi" class="fn" aria-label="Lihat bagian sitasi">1</a></span></span></span>
+    </h1>
+
+    <p class="lede reveal">
+      ScholarBot membaca PDF dan catatan yang kamu unggah, menjawab dengan bahasa
+      yang kamu pahami, lalu menunjukkan potongan sumbernya — supaya kamu bisa
+      <strong>memeriksa</strong>, bukan sekadar percaya.
+    </p>
+
+    <div class="hero__cta reveal">
+      <a class="btn btn--solid" href="#alur">Lihat cara kerjanya</a>
+      <a class="btn btn--quiet" href="https://github.com/loxleyftsck/SCHOLARBOT-AI" target="_blank" rel="noopener">Baca kodenya di GitHub</a>
+    </div>
+
+    <p class="hero__note reveal">
+      Proyek personal · Python + FastAPI + React · tanpa vector database
+    </p>
+  </div>
+
+  <!-- Live miniature of the real chat UI -->
+  <div class="hero__demo reveal" data-demo>
+    <div class="chat" role="img" aria-label="Simulasi percakapan: pengguna bertanya soal elastisitas permintaan, ScholarBot menjawab dengan penanda sumber nomor satu yang merujuk ke dokumen ekonomi yang diunggah.">
+      <div class="chat__bar">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        <span class="chat__file">ekonomi_elastisitas.pdf</span>
+      </div>
+
+      <div class="chat__body">
+        <div class="bubble bubble--user" data-step="1">
+          Kenapa beras disebut inelastis?
+        </div>
+
+        <div class="bubble bubble--bot" data-step="2">
+          <span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>
+          <!-- Static answer for no-JS; main.js clears it and types it back in. -->
+          <p class="answer">Karena beras adalah kebutuhan pokok — orang tetap membelinya meski harga naik, jadi koefisien elastisitasnya di bawah satu. <span class="srcbadge srcbadge--inline">1</span></p>
+        </div>
+
+        <div class="srccard" data-step="3">
+          <div class="srccard__head">
+            <span class="srcbadge">1</span>
+            <span class="srccard__name">ekonomi_elastisitas.pdf</span>
+            <span class="srccard__meta">bagian 3 · skor 0.81</span>
+          </div>
+          <p class="srccard__quote">
+            Permintaan disebut inelastis apabila koefisiennya kurang dari satu.
+            Barang kebutuhan pokok seperti beras dan garam bersifat inelastis
+            karena tetap dibeli meski harganya naik.
+          </p>
+        </div>
+      </div>
+
+      <button class="chat__replay" type="button" data-replay>
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        Putar ulang
+      </button>
+    </div>
+    <p class="hero__caption">Klik penanda <span class="srcbadge srcbadge--inline">1</span> di jawaban untuk membuka sumbernya.</p>
+  </div>
+</section>
+
+<!-- ─────────────────────────────  METRIK  ───────────────────────────── -->
+<section class="metrics" aria-label="Angka proyek">
+  <dl>
+    <!-- real figures live in the markup; the script only animates up to them -->
+    <div class="metric reveal"><dt>tes otomatis lulus</dt><dd><span data-count="111">111</span></dd></div>
+    <div class="metric reveal"><dt>endpoint REST API</dt><dd><span data-count="13">13</span></dd></div>
+    <div class="metric reveal"><dt>mode personality</dt><dd><span data-count="4">4</span></dd></div>
+    <div class="metric reveal"><dt>vector database</dt><dd><span data-count="0">0</span></dd></div>
+  </dl>
+</section>
+
+<!-- ─────────────────────────────  MASALAH  ───────────────────────────── -->
+<section class="split" id="masalah">
+  <figure class="split__media reveal">
+    <img src="./assets/img/chalkboard-vitaly-gariev.jpg"
+         alt="Tangan menulis rumus integral dengan kapur di papan tulis hijau yang penuh notasi matematika."
+         width="1400" height="788" loading="lazy" data-parallax />
+    <figcaption>Foto: Vitaly Gariev / Unsplash</figcaption>
+  </figure>
+
+  <div class="split__text">
+    <p class="eyebrow reveal">Latar belakang</p>
+    <h2 class="h2 reveal">Chatbot biasa tidak pernah membaca modulmu.</h2>
+    <p class="body reveal">
+      Ia menjawab dari rata-rata internet. Padahal yang kamu ujikan minggu depan
+      adalah slide dosen, catatan kelas, dan rangkuman yang cuma ada di foldermu.
+    </p>
+
+    <ul class="claims">
+      <li class="reveal"><span class="claims__n">01</span>
+        <span><b>Jawaban generik.</b> Istilahnya beda dengan yang dipakai pengajarmu, contohnya tidak nyambung.</span>
+      </li>
+      <li class="reveal"><span class="claims__n">02</span>
+        <span><b>Tidak bisa diperiksa.</b> Kamu tidak tahu kalimat mana yang benar-benar berasal dari materi.</span>
+      </li>
+      <li class="reveal"><span class="claims__n">03</span>
+        <span><b>Belajarnya pasif.</b> Tidak ada ukuran kemajuan — hanya percakapan yang menumpuk.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────  FITUR  ───────────────────────────── -->
+<section class="section" id="fitur">
+  <header class="section__head">
+    <p class="eyebrow reveal">Kemampuan</p>
+    <h2 class="h2 reveal">Enam hal yang dikerjakan ScholarBot</h2>
+  </header>
+
+  <ol class="features">
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.9A4 4 0 0 0 7 22h10a5 5 0 0 0 .9-9.9A6 6 0 0 0 6.2 8.3 4 4 0 0 0 4 14.9Z"/><path d="M12 12v6"/><path d="m9 15 3-3 3 3"/></svg>
+      <h3>RAG multi-dokumen</h3>
+      <p>Unggah PDF atau TXT. Teks diekstrak, dipotong di batas topik, lalu dipakai sebagai sumber jawaban.</p>
+    </li>
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h10v16H4z"/><path d="M17 7h3v13h-3"/><path d="M7 8h4M7 12h4"/></svg>
+      <h3>Sitasi inline</h3>
+      <p>Tiap kalimat yang berasal dari dokumen ditandai <span class="srcbadge srcbadge--inline">n</span> dan bisa diklik ke potongan aslinya.</p>
+    </li>
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8.5 11h5"/></svg>
+      <h3>Semantic search hibrida</h3>
+      <p>Cosine similarity NumPy untuk menangkap makna, dengan keyword search sebagai jaring pengaman saat API embedding mati.</p>
+    </li>
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11.5 11 13.5l4-4.5"/><circle cx="12" cy="12" r="9"/></svg>
+      <h3>Quiz &amp; mastery</h3>
+      <p>Soal dirangkai dari riwayat diskusimu sendiri, lalu skornya memperbarui progres penguasaan per topik.</p>
+    </li>
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/></svg>
+      <h3>Mind map interaktif</h3>
+      <p>Struktur materi divisualkan sebagai graf yang bisa diperluas node per node.</p>
+    </li>
+    <li class="feature reveal">
+      <svg class="feature__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg>
+      <h3>Memory &amp; personality</h3>
+      <p>Ingat nama dan topik yang sudah dibahas. Empat gaya bicara, dari formal sampai santai.</p>
+    </li>
+  </ol>
+</section>
+
+<!-- ─────────────────────────────  ALUR  ───────────────────────────── -->
+<section class="section section--rule" id="alur">
+  <header class="section__head">
+    <p class="eyebrow reveal">Cara kerja</p>
+    <h2 class="h2 reveal">Dari berkas mentah ke jawaban bersumber</h2>
+  </header>
+
+  <ol class="pipeline">
+    <li class="step reveal"><span class="step__n">1</span>
+      <h3>Unggah</h3><p>PDF atau TXT masuk lewat <code>/api/upload</code>.</p></li>
+    <li class="step reveal"><span class="step__n">2</span>
+      <h3>Ekstraksi</h3><p>pypdf untuk PDF, deteksi encoding otomatis untuk TXT.</p></li>
+    <li class="step reveal"><span class="step__n">3</span>
+      <h3>Chunking</h3><p>Dipotong di titik pergantian topik memakai ambang persentil dinamis.</p></li>
+    <li class="step reveal"><span class="step__n">4</span>
+      <h3>Retrieval</h3><p>Embedding cosine digabung keyword TF, diambil tiga potongan teratas.</p></li>
+    <li class="step reveal"><span class="step__n">5</span>
+      <h3>Jawaban</h3><p>Konteks disuntik ke prompt, jawaban keluar token demi token dengan penanda sumber.</p></li>
+  </ol>
+
+  <p class="pipeline__note reveal">
+    Setiap tahap punya jalur cadangan. Saat API embedding mati atau kena rate limit,
+    sistem turun ke keyword retrieval tanpa memunculkan error ke pengguna.
+  </p>
+</section>
+
+<!-- ─────────────────────────────  SITASI  ───────────────────────────── -->
+<section class="cite" id="sitasi">
+  <div class="cite__inner">
+    <p class="eyebrow eyebrow--light reveal">Bagian favorit saya</p>
+    <h2 class="h2 h2--light reveal">Setiap klaim membawa nomor halamannya.</h2>
+    <p class="body body--light reveal">
+      Model diminta menutup tiap kalimat yang berasal dari materi dengan penanda
+      <span class="srcbadge srcbadge--inline srcbadge--light">n</span>, dan hanya boleh memakai nomor yang
+      benar-benar dikirim ke dalam prompt. Nomor karangan disaring di backend, penanda
+      di luar rentang dibiarkan sebagai teks biasa. Kalimat dari pengetahuan umum
+      sengaja dibiarkan tanpa penanda — supaya kamu tahu mana yang bisa ditelusuri.
+    </p>
+    <ul class="cite__list">
+      <li class="reveal"><b>Nomor yang stabil.</b> Label di prompt, di jawaban, dan di kartu sumber adalah angka yang sama.</li>
+      <li class="reveal"><b>Bisa diperiksa.</b> Satu klik membuka potongan teks persis yang dipakai, lengkap dengan skor relevansinya.</li>
+      <li class="reveal"><b>Jujur soal batas.</b> Sumber yang tidak terpakai ditandai, bukan disembunyikan.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────────────────────────  STACK  ───────────────────────────── -->
+<section class="section" id="stack">
+  <header class="section__head">
+    <p class="eyebrow reveal">Dibangun dengan</p>
+    <h2 class="h2 reveal">Ringan sampai ke tulangnya</h2>
+    <p class="body reveal">Tanpa GPU, tanpa database server, tanpa vector store. Backend-nya muat di instance terkecil.</p>
+  </header>
+
+  <ul class="stack">
+    <li class="reveal"><img src="./assets/icons/react.svg" alt="" width="28" height="28" loading="lazy"><span>React 18</span></li>
+    <li class="reveal"><img src="./assets/icons/vite.svg" alt="" width="28" height="28" loading="lazy"><span>Vite 5</span></li>
+    <li class="reveal"><img src="./assets/icons/tailwindcss.svg" alt="" width="28" height="28" loading="lazy"><span>Tailwind</span></li>
+    <li class="reveal"><img src="./assets/icons/python.svg" alt="" width="28" height="28" loading="lazy"><span>Python 3.11</span></li>
+    <li class="reveal"><img src="./assets/icons/fastapi.svg" alt="" width="28" height="28" loading="lazy"><span>FastAPI</span></li>
+    <li class="reveal"><img src="./assets/icons/numpy.svg" alt="" width="28" height="28" loading="lazy"><span>NumPy</span></li>
+  </ul>
+</section>
+
+<!-- ─────────────────────────────  UNTUK SIAPA  ───────────────────────────── -->
+<section class="split split--flip" id="untuk">
+  <figure class="split__media reveal">
+    <img src="./assets/img/library-annie-spratt.jpg"
+         alt="Deretan rak kayu berisi buku-buku tua di perpustakaan dengan cahaya hangat."
+         width="1400" height="1191" loading="lazy" data-parallax />
+    <figcaption>Foto: Annie Spratt / Unsplash</figcaption>
+  </figure>
+
+  <div class="split__text">
+    <p class="eyebrow reveal">Untuk siapa</p>
+    <h2 class="h2 reveal">Buat yang belajarnya dari tumpukan materi sendiri</h2>
+    <p class="body reveal">
+      Siswa yang mau materi dijelaskan ulang tanpa merasa dihakimi. Mahasiswa yang
+      menghadapi slide padat di semester awal. Dan siapa pun yang belajar mandiri
+      dari e-book serta catatan yang menumpuk di folder.
+    </p>
+    <p class="body reveal">
+      ScholarBot bukan pengganti guru atau buku. Ia teman belajar yang tidak pernah
+      kehabisan kesabaran, dan selalu mau menunjukkan dari mana jawabannya datang.
+    </p>
+    <a class="btn btn--solid reveal" href="https://github.com/loxleyftsck/SCHOLARBOT-AI" target="_blank" rel="noopener">Jalankan sendiri</a>
+  </div>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="footer__top">
+    <div>
+      <p class="footer__mark">ScholarBot AI</p>
+      <p class="footer__by">Dibuat oleh Herald Michain Samuel Theo</p>
+    </div>
+    <ul class="footer__links">
+      <li><a href="https://github.com/loxleyftsck/SCHOLARBOT-AI" target="_blank" rel="noopener">GitHub</a></li>
+      <li><a href="mailto:heraldmsamueltheo@gmail.com">Email</a></li>
+    </ul>
+  </div>
+
+  <div class="footer__notes">
+    <p class="footer__noteshead">Catatan kaki</p>
+    <ol>
+      <li><span class="fn fn--static">1</span> Foto papan tulis oleh <a href="https://unsplash.com/@silverkblack" target="_blank" rel="noopener">Vitaly Gariev</a> dan foto perpustakaan oleh <a href="https://unsplash.com/@anniespratt" target="_blank" rel="noopener">Annie Spratt</a>, keduanya di bawah Unsplash License.</li>
+      <li><span class="fn fn--static">2</span> Logo teknologi dari <a href="https://simpleicons.org" target="_blank" rel="noopener">Simple Icons</a> (CC0). Huruf DM Serif Display, DM Sans, dan JetBrains Mono di bawah SIL Open Font License.</li>
+      <li><span class="fn fn--static">3</span> Angka pada bagian metrik diambil dari repositori: 111 tes pytest yang lulus dan 13 route FastAPI.</li>
+    </ol>
+  </div>
+</footer>
+
+<script src="./main.js" defer></script>
+</body>
+</html>
