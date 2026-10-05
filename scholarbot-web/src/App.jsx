@@ -4,7 +4,7 @@ import { AnswerBody, parseCitationIds } from './markdown';
 import dagre from 'dagre';
 import ReactFlow, { Background, Controls, MarkerType, Handle, Position, useNodesState, useEdgesState } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { API_BASE_URL } from './config';
+import { API_BASE_URL, waitForBackend } from './config';
 
 import { 
   motion, 
@@ -884,6 +884,8 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 // ─── MAIN APP COMPONENT ────────────────────────────────────────────────────────
 
 export default function App() {
+  const [backendStatus, setBackendStatus] = useState('waking');
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
   const [activeMode, setActiveMode] = useState('belajar'); // 'belajar', 'rangkuman', 'latihan', 'mindmap'
   const [personality, setPersonality] = useState('😊 Santai & Friendly');
   const [user_name, setUserName] = useState(() => localStorage.getItem('scholarbot_user_name') || 'Budi');
@@ -1117,9 +1119,14 @@ export default function App() {
 
   // Load session from backend on mount
   useEffect(() => {
+    const controller = new AbortController();
+    setBackendStatus('waking');
     const restoreSession = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/session/${sessionId}`);
+        await waitForBackend(controller.signal);
+        if (controller.signal.aborted) return;
+        setBackendStatus('ready');
+        const response = await fetch(`${API_BASE_URL}/api/session/${sessionId}`, { signal: controller.signal });
         if (response.ok) {
           const data = await response.json();
           if (data.messages && data.messages.length > 0) {
@@ -1130,15 +1137,18 @@ export default function App() {
           }
         }
       } catch (e) {
+        if (controller.signal.aborted) return;
+        setBackendStatus('unavailable');
         console.warn("Gagal memulihkan sesi pada saat inisialisasi:", e);
       }
     };
     restoreSession();
-  }, [sessionId]);
+    return () => controller.abort();
+  }, [sessionId, connectionAttempt]);
 
   // Handler for sending messages
   const handleSendMessage = async (textToSend) => {
-    if (!textToSend.trim()) return;
+    if (!textToSend.trim() || backendStatus !== 'ready' || isTyping) return;
 
     if (activeMode === 'mindmap') {
       handleGenerateMindMap(textToSend);
@@ -1156,20 +1166,18 @@ export default function App() {
     setChatInput('');
     setIsTyping(true);
 
-    const MAX_RETRIES = 1;
+    const MAX_RETRIES = 0; // Retrying a POST can duplicate a paid/quota-limited generation.
     let lastError = null;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
         const response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          signal: controller.signal,
+          signal: AbortSignal.timeout(90000),
           body: JSON.stringify({
             message: textToSend,
             session_id: sessionId,
@@ -1179,7 +1187,6 @@ export default function App() {
           })
         });
 
-        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
@@ -1244,11 +1251,11 @@ export default function App() {
     setIsTyping(false);
 
     let errorContent;
-    if (lastError?.name === 'AbortError') {
+    if (lastError?.name === 'AbortError' || lastError?.name === 'TimeoutError') {
       errorContent = '⏳ Waktu permintaan habis. Server LLM mungkin sedang sibuk — coba kirim ulang pesan Anda.';
     } else if (lastError?.message?.includes('Failed to fetch') || lastError?.message?.includes('NetworkError') || lastError?.message?.includes('ERR_CONNECTION_REFUSED')) {
       // Backend not reachable at all
-      errorContent = `⚠️ Hubungan terputus. Pastikan FastAPI backend Anda berjalan di ${API_BASE_URL} dengan menjalankan command:\n\`uvicorn api:app --reload\` di folder \`scholarbot\`.`;
+      errorContent = '⚠️ Demo sedang tidak tersedia. Tunggu sebentar, lalu coba kirim ulang pesan Anda.';
     } else {
       errorContent = `⚠️ Gagal mendapatkan respons: ${lastError?.message || 'Unknown error'}. Coba kirim ulang pesan Anda.`;
     }
@@ -1324,10 +1331,15 @@ export default function App() {
 
   // Drag and drop / file uploader
   const handleFileUpload = async (e) => {
+    if (backendStatus !== 'ready') return;
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
     for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`Ukuran ${file.name} melebihi batas demo 5 MB.`);
+        continue;
+      }
       const formData = new FormData();
       formData.append("file", file);
       formData.append("session_id", sessionId);
@@ -1559,12 +1571,13 @@ export default function App() {
                 type="file" 
                 multiple
                 accept=".txt,.pdf"
+                disabled={backendStatus !== 'ready'}
                 onChange={handleFileUpload}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
               <Upload className="w-5 h-5 text-text-muted mb-1.5 group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-semibold text-text-primary">Unggah berkas PDF/TXT</span>
-              <span className="text-[9px] text-text-muted mt-0.5">Maks 200MB</span>
+              <span className="text-[9px] text-text-muted mt-0.5">Maks 5 MB per berkas · data sementara</span>
             </motion.div>
 
             {uploadedDocs.length > 0 && (
@@ -1629,6 +1642,11 @@ export default function App() {
 
       {/* ─── RIGHT WORKSPACE / CHAT PANEL ───────────────────────────────────────── */}
       <main className="flex-1 flex flex-col justify-between overflow-hidden relative">
+        <div role="status" aria-live="polite" className="px-6 py-3 text-sm bg-slate-50 border-b border-slate-200 text-slate-700">
+          {backendStatus === 'waking' && 'Menyiapkan demo… Server gratis mungkin perlu sekitar satu menit untuk bangun.'}
+          {backendStatus === 'ready' && 'Demo siap. Riwayat dan dokumen bersifat sementara; gunakan materi contoh tanpa data pribadi.'}
+          {backendStatus === 'unavailable' && <span>Demo belum tersedia. <button className="underline font-medium" onClick={() => setConnectionAttempt(value => value + 1)}>Coba hubungkan lagi</button></span>}
+        </div>
         <div className="flex-1 overflow-y-auto px-10 py-8 scrollbar-thin">
           
           <AnimatePresence mode="wait">
@@ -2088,6 +2106,8 @@ export default function App() {
               {/* Send Button */}
               <motion.button 
                 onClick={() => handleSendMessage(chatInput)}
+                disabled={backendStatus !== 'ready' || isTyping || !chatInput.trim()}
+                aria-label="Kirim pesan"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="w-10 h-10 rounded-full bg-walnut flex items-center justify-center text-surface-raised shadow-md cursor-pointer hover:bg-walnut-light"

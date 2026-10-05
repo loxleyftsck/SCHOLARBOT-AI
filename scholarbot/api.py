@@ -8,6 +8,8 @@ import os
 import sys
 import uuid
 import json
+import time
+from collections import deque
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 
@@ -17,7 +19,7 @@ load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 
 # Add workspace directory to path
@@ -60,7 +62,8 @@ else:
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "http://localhost:3001",
-        "http://127.0.0.1:3001"
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:4175"
     ]
 
 app.add_middleware(
@@ -69,7 +72,31 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["X-RAG-Sources", "Retry-After"],
 )
+
+# A shared demo quota across all visitors (single-worker deployment).
+DEMO_REQUESTS_PER_MINUTE = int(os.getenv("DEMO_REQUESTS_PER_MINUTE", "0"))
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", "5242880"))
+DEMO_REQUEST_TIMES = deque()
+
+@app.middleware("http")
+async def limit_demo_requests(request, call_next):
+    if DEMO_REQUESTS_PER_MINUTE > 0 and request.method == "POST":
+        now = time.monotonic()
+        while DEMO_REQUEST_TIMES and now - DEMO_REQUEST_TIMES[0] >= 60:
+            DEMO_REQUEST_TIMES.popleft()
+        if len(DEMO_REQUEST_TIMES) >= DEMO_REQUESTS_PER_MINUTE:
+            response = JSONResponse(status_code=429, content={"detail": "Demo sedang ramai. Coba lagi dalam satu menit."}, headers={"Retry-After": "60"})
+            origin = request.headers.get("origin")
+            if origin in allowed_origins:
+                response.headers["Access-Control-Allow-Origin"] = origin
+                response.headers["Access-Control-Allow-Credentials"] = "true"
+                response.headers["Access-Control-Expose-Headers"] = "Retry-After"
+                response.headers["Vary"] = "Origin"
+            return response
+        DEMO_REQUEST_TIMES.append(now)
+    return await call_next(request)
 
 # Global session database in memory (perfect for local development)
 class SessionState:
@@ -316,7 +343,9 @@ async def upload_document(
 
     # Read file content safely
     try:
-        content_bytes = await file.read()
+        content_bytes = await file.read(MAX_UPLOAD_BYTES + 1)
+        if len(content_bytes) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail=f"Ukuran dokumen maksimal {MAX_UPLOAD_BYTES // (1024 * 1024)} MB untuk demo.")
         
         from services.document_loader import extract_document
         try:
@@ -350,6 +379,8 @@ async def upload_document(
             "uploaded_docs": state.uploaded_docs
         }
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Gagal memproses dokumen: {str(e)}")
 

@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: scholarbot-demo-api
+    runtime: python
+    plan: free
+    rootDir: scholarbot
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: GROQ_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: MODEL_NAME
+        value: openai/gpt-oss-120b
+      - key: MAX_UPLOAD_BYTES
+        value: "5242880"
+      - key: DEMO_REQUESTS_PER_MINUTE
+        value: "10"

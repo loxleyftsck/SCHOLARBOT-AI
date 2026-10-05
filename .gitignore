@@ -21,3 +21,4 @@ scholarbot-web/.DS_Store
 .claude/
 .ppt-build/
 *.backup
+dist-demo/

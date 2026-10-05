@@ -7,6 +7,7 @@ import sys
 import uuid
 import pytest
 from unittest.mock import patch, MagicMock
+from collections import deque
 from fastapi.testclient import TestClient
 
 # Add scholarship root to path
@@ -185,6 +186,27 @@ class TestCitationSystem:
 
 class TestUploadEndpoint:
     """Test RAG document upload and chunking."""
+
+    def test_upload_over_limit_does_not_store_document(self, client):
+        session_id = f"upload-limit-{uuid.uuid4().hex}"
+        with patch("api.MAX_UPLOAD_BYTES", 8):
+            response = client.post('/api/upload', data={"session_id": session_id}, files={"file": ("large.txt", b"123456789", "text/plain")})
+        assert response.status_code == 413
+        assert SESSIONS[session_id].uploaded_docs == []
+
+    def test_empty_document_is_bad_request(self, client):
+        response = client.post('/api/upload', files={"file": ("empty.txt", b"   ", "text/plain")})
+        assert response.status_code == 400
+
+    def test_demo_quota_keeps_health_available_and_cors_readable(self, client):
+        with patch('api.DEMO_REQUESTS_PER_MINUTE', 1), patch('api.DEMO_REQUEST_TIMES', deque()):
+            headers = {"Origin": "http://localhost:3000"}
+            assert client.post('/api/upload', headers=headers, files={"file": ("doc.txt", b"Materi contoh mengenai cara kerja pembelajaran mesin untuk mahasiswa.", "text/plain")}).status_code == 200
+            response = client.post('/api/upload', headers=headers, files={"file": ("doc.txt", b"hello", "text/plain")})
+            assert response.status_code == 429
+            assert response.headers['retry-after'] == '60'
+            assert response.headers['access-control-allow-origin'] == headers['Origin']
+            assert client.get('/api/health').status_code == 200
 
     def test_upload_text_file(self, client):
         file_content = b"Ini adalah isi dokumen test untuk RAG ScholarBot."
