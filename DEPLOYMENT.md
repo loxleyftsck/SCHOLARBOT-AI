@@ -7,6 +7,7 @@ Jangan unggah `.env` atau memasukkan GROQ_API_KEY sebagai variabel Vite: semua v
 
 Push perubahan ke GitHub, kemudian di https://dashboard.render.com pilih **New > Blueprint** dan hubungkan repository ini serta branch yang memuat `render.yaml`.
 Blueprint secara eksplisit memilih **Free**; jangan menggantinya dengan paket berbayar.
+Jika Render mengembalikan `402` atau `need_payment_info`, akun perlu diverifikasi melalui dashboard Billing sebelum layanan dapat dibuat. Verifikasi harus diselesaikan pemilik akun; jangan membagikan informasi kartu melalui chat. Render menyebut transaksi verifikasi US$1 yang dikembalikan setelah selesai. Paket Free tetap memiliki batas penggunaan; penggunaan bandwidth di luar kuota dapat dikenakan biaya bila metode pembayaran tersimpan.
 
 Isi variabel yang diminta:
 
@@ -30,6 +31,7 @@ Di https://dash.cloudflare.com pilih **Workers & Pages > Create application > Pa
 | Node version | `NODE_VERSION` = `22` |
 
 Set `VITE_API_BASE_URL` pada environment Production; jika memakai Preview, set juga pada Preview.
+Alternatif upload langsung dari perangkat yang sudah login: `npx wrangler pages deploy dist-demo --project-name scholarbot-ai-demo --branch feature/v3.2-semantic-feedback`. Proyek upload langsung tidak otomatis membangun ulang ketika GitHub berubah; jalankan build dan deploy lagi setelah perubahan.
 Build demo sengaja gagal jika URL HTTPS backend belum diisi. Setelah Pages memberi URL publik, masukkan URL tersebut ke `ALLOWED_ORIGINS` Render lalu redeploy backend.
 Origin preview hanya diizinkan jika ditambahkan secara eksplisit, dipisah koma. CORS bukan autentikasi dan tidak mencegah akses langsung ke API.
 
