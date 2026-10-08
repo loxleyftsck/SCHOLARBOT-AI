@@ -1,0 +1,137 @@
+{
+  "reviewer": "Codex manual reading, not an independent human or automated judge",
+  "rubric": "Each citation occurrence: preceding sentence/paragraph/table cell. Fully supported only if all factual details in that unit appear in or follow directly from cited evidence. Plausible external examples/inferences without a separate knowledge label count as not fully supported. Uncited claims are excluded from this denominator and separately noted. Corpus-absence statement checked against the full synthetic corpus. This is a diagnostic unit-level metric, not exhaustive atomic-claim annotation.",
+  "units": [
+    {
+      "question_id": "d06",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Paragraf akhir: pencarian lebih cepat, penyimpanan dan penulisan bertambah. Detail insert/update/delete sebelumnya tidak bersitasi dan tidak dinilai pada unit ini."
+    },
+    {
+      "question_id": "d08",
+      "citation_id": 2,
+      "fully_supported": false,
+      "note": "Paragraf keluaran menambahkan glukosa; sumber hanya menyebut gula dan oksigen. Fakta umum ini tidak dinyatakan dalam potongan."
+    },
+    {
+      "question_id": "p07",
+      "citation_id": 1,
+      "fully_supported": false,
+      "note": "Paragraf pertama menambahkan username dan password; contoh metode identitas tidak tersedia dalam sumber."
+    },
+    {
+      "question_id": "p07",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Paragraf kedua membedakan otorisasi sebagai pemeriksaan hak akses, sesuai sumber."
+    },
+    {
+      "question_id": "m04",
+      "citation_id": 2,
+      "fully_supported": true,
+      "note": "Sel cara kerja BM25 sesuai frekuensi istilah, kelangkaan dan normalisasi panjang."
+    },
+    {
+      "question_id": "m04",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Sel biaya indeks sesuai penyimpanan dan biaya penulisan. Sel lain tanpa sitasi bukan bagian dari unit ini."
+    },
+    {
+      "question_id": "m06",
+      "citation_id": 2,
+      "fully_supported": true,
+      "note": "Panel surya mengubah cahaya menjadi listrik melalui fotovoltaik, sesuai sumber."
+    },
+    {
+      "question_id": "m06",
+      "citation_id": 1,
+      "fully_supported": false,
+      "note": "Paragraf baterai menambahkan cuaca mendung/malam dan asal listrik dari panel; source yang disitasi hanya menyebut penyimpanan kimia dan saat panel tidak menghasilkan daya. Inferensi masuk akal, tetapi belum dipisahkan dari isi sumber."
+    },
+    {
+      "question_id": "m06",
+      "citation_id": 3,
+      "fully_supported": true,
+      "note": "Definisi efisiensi keluaran berguna dibanding masukan sesuai sumber."
+    },
+    {
+      "question_id": "m07",
+      "citation_id": 2,
+      "fully_supported": false,
+      "note": "Bullet hash menambahkan sifat unik; sumber tidak menyatakan keunikan atau jaminan bebas collision."
+    },
+    {
+      "question_id": "m07",
+      "citation_id": 3,
+      "fully_supported": true,
+      "note": "Pesan ciphertext membutuhkan kunci agar dapat dikembalikan; parafrase sesuai sumber."
+    },
+    {
+      "question_id": "m07",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Autentikasi memeriksa identitas, sesuai sumber."
+    },
+    {
+      "question_id": "f04",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Paragraf pertama tentang retrieval mendahului generator sesuai sumber. Klaim akurasi/kecepatan pada bullet setelahnya tidak bersitasi."
+    },
+    {
+      "question_id": "n07",
+      "citation_id": 1,
+      "fully_supported": true,
+      "note": "Penolakan menyatakan jumlah kloroplas tidak tersedia; korpus dan sumber terpilih memang tidak memuat jumlah tersebut. Pengetahuan tambahan ditandai terpisah."
+    }
+  ],
+  "summary": {
+    "citation_occurrences": 14,
+    "citation_ids_in_supplied_context": true,
+    "fully_supported_cited_units": 10,
+    "reviewed_units": 14,
+    "supported_unit_rate": 0.7142857142857143,
+    "no_answer_reviewed": 7,
+    "no_answer_correctly_refused": 7,
+    "uncited_claim_coverage": "Not quantified. Additional unlabelled details in m04 and f04 remain; unit precision alone cannot certify whole-answer grounding."
+  },
+  "abstention": [
+    {
+      "question_id": "n04",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n05",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n06",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n07",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n08",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n09",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    },
+    {
+      "question_id": "n10",
+      "correct": true,
+      "note": "States requested specific data are absent; does not invent the requested value."
+    }
+  ]
+}

@@ -69,11 +69,13 @@ def compute_relevance_score(query: str, chunk_content: str) -> float:
 
     # Token overlap (query words in chunk)
     overlap = query_tokens.intersection(chunk_tokens)
+    if not overlap:
+        return 0.0
     overlap_score = len(overlap) / len(query_tokens)
 
     # TF boost: count term frequency in chunk
-    chunk_text_lower = chunk_content.lower()
-    tf_sum = sum(chunk_text_lower.count(t) for t in query_tokens)
+    words = re.findall(r"\w+", chunk_content.lower())
+    tf_sum = sum(words.count(t) for t in overlap)
     tf_score = tf_sum / len(chunk_tokens) if chunk_tokens else 0
 
     # Length penalty: prefer concise chunks (higher density)
@@ -153,36 +155,33 @@ def retrieve(query: str, chunks: List, top_k: int = 3, min_score: float = 0.1) -
     return diversified_results
 
 
-def format_retrieved_context(retrieved: List[RetrievedChunk], max_chars: int = 1200) -> str:
-    """Format retrieved chunks into a single context string for prompt injection.
-
-    Args:
-        retrieved: List of RetrievedChunk objects
-        max_chars: Maximum total characters in context
-
-    Returns:
-        Formatted context string with citations
-    """
-    if not retrieved:
-        return ""
-
-    parts = []
+def select_context_chunks(retrieved: List[RetrievedChunk], max_chars: int = 1200) -> List[RetrievedChunk]:
+    """Select exactly the evidence that fits, including citation labels/separators."""
+    selected = []
     total = 0
+    for chunk in retrieved:
+        content = chunk.content.strip()
+        if not content:
+            continue
+        number = len(selected) + 1
+        label = f"[{number}] Sumber: {chunk.source_filename} (bagian {chunk.chunk_index + 1})"
+        overhead = len(label) + 1 + (7 if selected else 0)
+        remaining = max_chars - total - overhead if max_chars > 0 else len(content)
+        if remaining <= 0:
+            continue
+        content = content[:remaining]
+        selected.append(RetrievedChunk(content, chunk.score, chunk.source_filename, chunk.chunk_index))
+        total += overhead + len(content)
+    return selected
 
-    for i, chunk in enumerate(retrieved, 1):
-        # Truncate chunk if needed
-        chunk_text = chunk.content[:max_chars] if max_chars > 0 else chunk.content
-        # Citation marker is the SAME token the LLM must reuse inline: [1], [2], ...
-        citation = f"[{i}] Sumber: {chunk.source_filename} (bagian {chunk.chunk_index + 1})"
 
-        parts.append(f"{citation}\n{chunk_text}")
-        total += len(chunk_text) + len(citation)
-
-        if max_chars and total >= max_chars:
-            break
-
-    return "\n\n---\n\n".join(parts)
-
+def format_retrieved_context(retrieved: List[RetrievedChunk], max_chars: int = 1200) -> str:
+    """Format only evidence that fits the shared context budget."""
+    selected = select_context_chunks(retrieved, max_chars)
+    return "\n\n---\n\n".join(
+        f"[{i}] Sumber: {chunk.source_filename} (bagian {chunk.chunk_index + 1})\n{chunk.content}"
+        for i, chunk in enumerate(selected, 1)
+    )
 
 def has_relevant_content(query: str, chunks: List, threshold: float = 0.2) -> bool:
     """Quick check if any chunk meets relevance threshold.

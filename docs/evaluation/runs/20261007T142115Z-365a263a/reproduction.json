@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "first": "20261007T142113Z-68cde39c",
+  "second": "20261007T142115Z-365a263a",
+  "identical_rankings_scores_and_contexts": 300,
+  "aggregate_metrics_recomputed": true,
+  "hashes_verified": true,
+  "latency_exact_reproduction": false
+}

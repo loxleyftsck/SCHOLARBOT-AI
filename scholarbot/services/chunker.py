@@ -20,6 +20,7 @@ class Chunk:
     chunk_index: int
     source_filename: str
     embedding: list[float] = None
+    embedding_cache_key: str | None = None
 
     def __getitem__(self, key):
         if key == "source" or key == "source_filename":
@@ -37,89 +38,50 @@ class Chunk:
         return f"Chunk {self.chunk_index}: {preview}..."
 
 
-def chunk_by_paragraph(text: str, min_chars: int = 100) -> list[Chunk]:
-    """Split text into chunks by paragraph (double newline separator).
-
-    Best for: structured documents (notes, summaries, articles)
-    Filters out short paragraphs to avoid noise.
-
-    Args:
-        text: Full document text
-        min_chars: Minimum character count for a chunk to be kept
-
-    Returns:
-        List of Chunk objects
-    """
+def chunk_by_paragraph(text: str, min_chars: int = 100, max_chars: int = 800) -> list[Chunk]:
+    """Keep short paragraphs by grouping them; split any overlong group."""
     if not text or not text.strip():
         return []
-
-    # Split by paragraph (double newline)
-    paragraphs = text.split('\n\n')
-
     chunks = []
-    for idx, para in enumerate(paragraphs):
-        para = para.strip()
-        # Filter: skip short paragraphs (likely headers, footers, noise)
-        if len(para) >= min_chars:
-            chunks.append(Chunk(content=para, chunk_index=idx, source_filename=""))
-
+    pending = ""
+    for paragraph in text.split('\n\n'):
+        paragraph = paragraph.strip()
+        if not paragraph:
+            continue
+        pending = f"{pending}\n\n{paragraph}" if pending else paragraph
+        if len(pending) >= min_chars:
+            chunks.extend(chunk_by_size(pending, max_chars))
+            pending = ""
+    if pending:
+        chunks.extend(chunk_by_size(pending, max_chars))
+    for i, chunk in enumerate(chunks):
+        chunk.chunk_index = i
     return chunks
-
 
 def chunk_by_size(text: str, chunk_size: int = 800, overlap: int = 150) -> list[Chunk]:
-    """Split text into fixed-size chunks with overlap.
-
-    Best for: dense long-form text without clear paragraph breaks.
-    Overlap helps prevent context loss at chunk boundaries.
-
-    Args:
-        text: Full document text
-        chunk_size: Target character count per chunk
-        overlap: Character overlap between consecutive chunks
-
-    Returns:
-        List of Chunk objects
-    """
+    """Bounded overlapping chunks, preserving short documents and trailing text."""
+    if chunk_size <= 0 or overlap < 0:
+        raise ValueError("chunk_size must be positive and overlap non-negative")
     if not text or not text.strip():
         return []
-
     text = text.strip()
+    overlap = min(overlap, chunk_size // 4)
     chunks = []
-    idx = 0
-    chunk_num = 0
-
-    while idx < len(text):
-        # Extract chunk with overlap padding
-        chunk_end = min(idx + chunk_size, len(text))
-        chunk_text = text[idx:chunk_end]
-
-        # Try to break at sentence boundary (.) or comma for cleaner splits
-        if chunk_end < len(text):
-            # Look for sentence break within last 100 chars of chunk
-            search_start = max(idx, chunk_end - 100)
-            last_period = max(
-                chunk_text.rfind('. '),
-                chunk_text.rfind(', '),
-                chunk_text.rfind(';\n'),
-            )
-            if last_period > search_start:
-                # Break after punctuation
-                chunk_text = chunk_text[:last_period + 2]
-                chunk_end = idx + len(chunk_text)
-
-        if len(chunk_text.strip()) < 50:
-            break  # Skip tiny remnant chunks
-
-        chunks.append(Chunk(content=chunk_text.strip(), chunk_index=chunk_num, source_filename=""))
-        # Always advance forward — max ensures idx never stalls or rewinds
-        idx = max(chunk_end - overlap, idx + 1)
-        chunk_num += 1
-
-        if idx >= len(text):  # Safety: prevent infinite loop
+    start = 0
+    while start < len(text):
+        end = min(start + chunk_size, len(text))
+        if end < len(text):
+            segment = text[start:end]
+            boundary = max(segment.rfind('. '), segment.rfind(', '), segment.rfind(';\n'))
+            if boundary >= max(len(segment) - 100, len(segment) // 2):
+                end = start + boundary + 2
+        content = text[start:end].strip()
+        if content:
+            chunks.append(Chunk(content, len(chunks), ""))
+        if end == len(text):
             break
-
+        start = max(start + 1, end - overlap)
     return chunks
-
 
 def chunk_semantically(text: str, filename: str = "", max_chunk_chars: int = 1000) -> list[Chunk]:
     """Split text into chunks semantically using adaptive sentence similarity.
@@ -147,7 +109,10 @@ def chunk_semantically(text: str, filename: str = "", max_chunk_chars: int = 100
         return []
 
     if len(sentence_list) <= 3:
-        return [Chunk(content=text.strip(), chunk_index=0, source_filename=filename)]
+        chunks = chunk_by_size(text, max_chunk_chars)
+        for chunk in chunks:
+            chunk.source_filename = filename
+        return chunks
 
     # Limit units to avoid Hugging Face payload size or rate limits
     if len(sentence_list) > 100:
@@ -164,11 +129,14 @@ def chunk_semantically(text: str, filename: str = "", max_chunk_chars: int = 100
     else:
         units = sentence_list
 
+    # Oversized sentences must also respect the hard limit before embedding.
+    units = [part.content for unit in units for part in chunk_by_size(unit, max_chunk_chars)]
+
     # 2. Get embeddings in one batch
     embeddings = get_embeddings_batch(units)
     if not embeddings or len(embeddings) != len(units):
         print("[Semantic Chunking Fallback] Gagal mengambil embedding. Menggunakan paragraph chunking.")
-        fallback_chunks = chunk_by_paragraph(text)
+        fallback_chunks = chunk_by_paragraph(text, max_chars=max_chunk_chars)
         for c in fallback_chunks:
             c.source_filename = filename
         return fallback_chunks
@@ -191,7 +159,7 @@ def chunk_semantically(text: str, filename: str = "", max_chunk_chars: int = 100
 
     for i in range(1, len(units)):
         sim = similarities[i-1]
-        current_len = sum(len(u) for u in current_chunk_units)
+        current_len = len(" ".join(current_chunk_units)) + 1
 
         # Split condition: similarity drops below threshold or max character limit is breached
         if sim < threshold or current_len + len(units[i]) > max_chunk_chars:
@@ -243,6 +211,8 @@ def chunk_text(text: str, strategy: str = "auto", filename: str = "", max_chars:
     Returns:
         List of Chunk objects with source_filename set
     """
+    if max_chars <= 0:
+        raise ValueError("max_chars must be positive")
     if not text:
         return []
 
@@ -259,17 +229,28 @@ def chunk_text(text: str, strategy: str = "auto", filename: str = "", max_chars:
             strategy = "size"
 
     if strategy == "semantic":
-        raw_chunks = chunk_semantically(text, filename)
+        raw_chunks = chunk_semantically(text, filename, max_chunk_chars=max_chars)
         if not raw_chunks and text.strip():
             raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
     elif strategy == "paragraph":
-        raw_chunks = chunk_by_paragraph(text)
+        raw_chunks = chunk_by_paragraph(text, max_chars=max_chars)
         if not raw_chunks and text.strip():
             raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
     else:
         raw_chunks = chunk_by_size(text, chunk_size=max_chars)
         if not raw_chunks and text.strip():
             raw_chunks = [Chunk(content=text.strip(), chunk_index=0, source_filename="")]
+
+    # Enforce the limit on every path, including emergency fallbacks.
+    bounded = []
+    for chunk in raw_chunks:
+        if len(chunk.content) <= max_chars:
+            bounded.append(chunk)
+        else:
+            bounded.extend(chunk_by_size(chunk.content, max_chars))
+    raw_chunks = bounded
+    for i, chunk in enumerate(raw_chunks):
+        chunk.chunk_index = i
 
     # Attach filename to all chunks
     for chunk in raw_chunks:

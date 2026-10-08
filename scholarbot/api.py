@@ -9,6 +9,7 @@ import sys
 import uuid
 import json
 import time
+import math
 from collections import deque
 from typing import List, Dict, Any, Optional
 from datetime import datetime
@@ -42,7 +43,7 @@ from core.rag_context import (
 )
 from services.document_loader import get_document_info
 from services.chunker import chunk_text
-from services.retriever import RetrievedChunk
+from services.retriever import RetrievedChunk, select_context_chunks
 from services.semantic_search import hybrid_retrieve as retrieve
 from storage.json_store import load_session, save_session
 
@@ -72,22 +73,31 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-RAG-Sources", "Retry-After"],
+    expose_headers=["X-RAG-Sources", "X-Retrieval-Status", "Retry-After"],
 )
 
 # A shared demo quota across all visitors (single-worker deployment).
 DEMO_REQUESTS_PER_MINUTE = int(os.getenv("DEMO_REQUESTS_PER_MINUTE", "0"))
+DEMO_REQUESTS_PER_DAY = int(os.getenv("DEMO_REQUESTS_PER_DAY", "0"))
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", "5242880"))
 DEMO_REQUEST_TIMES = deque()
+DEMO_DAILY_REQUEST_TIMES = deque()
 
 @app.middleware("http")
 async def limit_demo_requests(request, call_next):
-    if DEMO_REQUESTS_PER_MINUTE > 0 and request.method == "POST":
+    limited = request.method == "POST" or (request.method == "GET" and request.url.path == "/api/quiz")
+    if limited and (DEMO_REQUESTS_PER_MINUTE > 0 or DEMO_REQUESTS_PER_DAY > 0):
         now = time.monotonic()
-        while DEMO_REQUEST_TIMES and now - DEMO_REQUEST_TIMES[0] >= 60:
-            DEMO_REQUEST_TIMES.popleft()
-        if len(DEMO_REQUEST_TIMES) >= DEMO_REQUESTS_PER_MINUTE:
-            response = JSONResponse(status_code=429, content={"detail": "Demo sedang ramai. Coba lagi dalam satu menit."}, headers={"Retry-After": "60"})
+        for queue, window in ((DEMO_REQUEST_TIMES, 60), (DEMO_DAILY_REQUEST_TIMES, 86400)):
+            while queue and now - queue[0] >= window:
+                queue.popleft()
+        retry_after = 0
+        for queue, window, limit in ((DEMO_REQUEST_TIMES, 60, DEMO_REQUESTS_PER_MINUTE), (DEMO_DAILY_REQUEST_TIMES, 86400, DEMO_REQUESTS_PER_DAY)):
+            if limit > 0 and len(queue) >= limit:
+                retry_after = max(retry_after, max(1, math.ceil(window - (now - queue[0]))))
+        if retry_after:
+            detail = "Kuota demo hari ini habis. Coba lagi nanti." if retry_after > 60 else "Demo sedang ramai. Coba lagi dalam satu menit."
+            response = JSONResponse(status_code=429, content={"detail": detail}, headers={"Retry-After": str(retry_after)})
             origin = request.headers.get("origin")
             if origin in allowed_origins:
                 response.headers["Access-Control-Allow-Origin"] = origin
@@ -95,7 +105,10 @@ async def limit_demo_requests(request, call_next):
                 response.headers["Access-Control-Expose-Headers"] = "Retry-After"
                 response.headers["Vary"] = "Origin"
             return response
-        DEMO_REQUEST_TIMES.append(now)
+        if DEMO_REQUESTS_PER_MINUTE > 0:
+            DEMO_REQUEST_TIMES.append(now)
+        if DEMO_REQUESTS_PER_DAY > 0:
+            DEMO_DAILY_REQUEST_TIMES.append(now)
     return await call_next(request)
 
 # Global session database in memory (perfect for local development)
@@ -104,6 +117,7 @@ class SessionState:
         self.messages: List[Dict[str, str]] = []
         self.topics_discussed: List[str] = []
         self.current_context: str = ""
+        self.active_mode: str = "belajar"
         self.last_question: str = ""
         self.last_answer: str = ""
         self.uploaded_docs: List[Dict[str, Any]] = []
@@ -209,11 +223,21 @@ async def chat_endpoint(req: ChatRequest):
     # Update session personality
     personality_key = req.personality
 
+    previous_mode = state.active_mode
+    state.active_mode = req.mode
+
     # Auto-detect quiz or mindmap mode
     if req.mode == "latihan" or is_quiz_request(user_msg):
         state.current_context = "quiz"
     elif req.mode == "mindmap":
         state.current_context = "mindmap"
+
+    elif req.mode == previous_mode and state.current_context == "quiz" and detect_intent(user_msg):
+        pass  # Keep an in-chat quiz follow-up, but never carry it across mode switches.
+    else:
+        state.current_context = "summary" if req.mode == "rangkuman" else ""
+        state.last_question = ""
+        state.last_answer = ""
 
     # Extract topic for memory card tracking
     extracted_topic = extract_topic(user_msg)
@@ -232,12 +256,22 @@ async def chat_endpoint(req: ChatRequest):
     # Build prompt with RAG if documents are uploaded and query is relevant
     has_documents = bool(state.doc_chunks)
     retrieved_chunks = []
+    retrieval_status = {"method": "not_run", "fallback": False}
     
-    if has_documents:
-        # Retrieve top 3 relevant chunks
+    retrieval_query = effective_msg
+    if effective_msg == user_msg and user_msg.lower() in {"lanjut", "hint", "jelaskan", "bahas", "buat lagi"}:
+        previous_query = next((m["content"] for m in reversed(state.messages) if m["role"] == "user"), "")
+        if previous_query:
+            retrieval_query = f"{previous_query}\nPertanyaan lanjutan: {user_msg}"
+    use_rag = should_use_rag(effective_msg, has_documents)
+    if use_rag:
+        # Retrieve evidence for the effective follow-up question, not its short command.
         try:
-            retrieved_chunks = retrieve(user_msg, state.doc_chunks, top_k=3)
+            retrieved_chunks = select_context_chunks(retrieve(retrieval_query, state.doc_chunks, top_k=3))
+            from services.semantic_search import get_retrieval_status
+            retrieval_status = get_retrieval_status()
         except Exception as e:
+            retrieval_status = {"method": "failed", "fallback": False}
             print(f"[RAG Error] Gagal melakukan retrieve: {e}")
 
     # Build system prompt
@@ -249,18 +283,33 @@ async def chat_endpoint(req: ChatRequest):
         last_question=state.last_question
     )
 
-    if retrieved_chunks and should_use_rag(user_msg, has_documents=has_documents):
+    if retrieved_chunks:
         system_content = build_rag_system_prompt(
             base_system_prompt, retrieved_chunks, state.current_context
         )
     else:
         system_content = base_system_prompt
 
+    if use_rag and not retrieved_chunks:
+        system_content += "\nMateri diunggah, tetapi tidak ditemukan potongan yang relevan. Nyatakan sumber belum cukup; jangan mengarang sitasi."
+    if req.mode == "rangkuman":
+        system_content += "\nBuat rangkuman terstruktur: pokok bahasan, konsep penting, dan batas cakupan. Jangan mengklaim merangkum seluruh dokumen bila hanya sebagian konteks tersedia."
+
     # Build standard messages list
     messages = [{"role": "system", "content": system_content}]
-    for m in state.messages:
-        role = "user" if m["role"] == "user" else "assistant"
-        messages.append({"role": role, "content": m["content"]})
+    # Conservative character budget for history, not an exact model tokenizer.
+    history = []
+    remaining_chars = 16000
+    for m in reversed(state.messages):
+        content = m["content"]
+        if len(content) > remaining_chars:
+            break
+        history.append({"role": "user" if m["role"] == "user" else "assistant", "content": content})
+        remaining_chars -= len(content)
+    history.reverse()
+    while history and history[0]["role"] != "user":
+        history.pop(0)
+    messages.extend(history)
     messages.append({"role": "user", "content": effective_msg})
 
     # Save user message to history
@@ -275,8 +324,8 @@ async def chat_endpoint(req: ChatRequest):
 
     # Serialize retrieved chunks as numbered citations ([1], [2], ...) for the frontend
     serialized_chunks = []
-    if retrieved_chunks and should_use_rag(user_msg, has_documents=has_documents):
-        serialized_chunks = build_citation_map(retrieved_chunks)
+    if retrieved_chunks:
+        serialized_chunks = build_citation_map(retrieved_chunks, snippet_chars=0)
 
     max_citation_id = len(serialized_chunks)
 
@@ -296,6 +345,7 @@ async def chat_endpoint(req: ChatRequest):
                 "content": accumulated_text,
                 "time": bot_msg_time,
                 "sources": serialized_chunks,
+                "retrieval_status": retrieval_status,
                 "cited_ids": extract_citation_ids(accumulated_text, max_id=max_citation_id)
             })
             
@@ -317,13 +367,15 @@ async def chat_endpoint(req: ChatRequest):
                 "content": final_content,
                 "time": bot_msg_time,
                 "sources": serialized_chunks,
+                "retrieval_status": retrieval_status,
                 "cited_ids": extract_citation_ids(final_content, max_id=max_citation_id)
             })
             persist_session(session_id, state)
             yield err_msg
 
     headers = {
-        "Access-Control-Expose-Headers": "X-RAG-Sources",
+        "X-Retrieval-Status": json.dumps(retrieval_status),
+        "Access-Control-Expose-Headers": "X-RAG-Sources, X-Retrieval-Status",
         "X-RAG-Sources": json.dumps(serialized_chunks, ensure_ascii=False)
     }
     return StreamingResponse(token_generator(), media_type="text/plain", headers=headers)
@@ -445,85 +497,18 @@ async def clear_docs(session_id: str):
 async def search_doc(session_id: str, query: str = Query(...), filename: str = Query(...)):
     """Search for matching chunks within a specific document in the session using semantic/keyword retrieval."""
     session_id, state = get_or_create_session(session_id)
-    if not query or not filename:
-        return []
-    
-    # Filter chunks belonging to this document, doing defensive checking for BUG-06
+    from services.chunker import Chunk
+    from services.semantic_search import get_retrieval_status
     doc_chunks = []
     for c in state.doc_chunks:
-        src = c.source_filename if hasattr(c, "source_filename") else c.get("source_filename", c.get("source", ""))
-        if src == filename:
-            doc_chunks.append(c)
-            
-    if not doc_chunks:
-        return []
-        
-    from services.semantic_search import compute_cosine_similarity, get_embeddings_batch
-    
-    # Try fetching query embedding
-    query_emb_list = get_embeddings_batch([query])
-    
-    # Precise substring fallback if embedding API fails
-    if not query_emb_list or len(query_emb_list) == 0:
-        results = []
-        q_lower = query.lower()
-        for c in doc_chunks:
-            c_content = c.content if hasattr(c, "content") else c.get("content", "")
-            c_index = c.chunk_index if hasattr(c, "chunk_index") else c.get("chunk_index", 0)
-            if q_lower in c_content.lower():
-                results.append({
-                    "content": c_content,
-                    "chunk_index": c_index,
-                    "score": 0.85
-                })
-        return results
-
-    query_emb = query_emb_list[0]
-    
-    # Batch-generate embeddings for any chunk missing it (BUG-04 Optimization)
-    missing_indices = []
-    missing_texts = []
-    for idx, c in enumerate(doc_chunks):
-        c_emb = getattr(c, "embedding", None) if hasattr(c, "embedding") else c.get("embedding", None)
-        if not c_emb:
-            c_content = c.content if hasattr(c, "content") else c.get("content", "")
-            missing_indices.append(idx)
-            missing_texts.append(c_content)
-            
-    if missing_texts:
-        try:
-            # Single batch HTTP request for all missing chunks
-            new_embeddings = get_embeddings_batch(missing_texts)
-            if new_embeddings:
-                for idx, emb in zip(missing_indices, new_embeddings):
-                    c = doc_chunks[idx]
-                    if hasattr(c, "embedding"):
-                        c.embedding = emb
-                    elif isinstance(c, dict):
-                        c["embedding"] = emb
-        except Exception as e:
-            print(f"[Embedding Batch Error] Failed to generate batch embeddings: {e}")
-
-    results = []
-    
-    # Perform semantic scoring
-    for c in doc_chunks:
-        c_content = c.content if hasattr(c, "content") else c.get("content", "")
-        c_index = c.chunk_index if hasattr(c, "chunk_index") else c.get("chunk_index", 0)
-        c_emb = getattr(c, "embedding", None) if hasattr(c, "embedding") else c.get("embedding", None)
-        
-        if c_emb:
-            score = compute_cosine_similarity(query_emb, c_emb)
-            results.append({
-                "content": c_content,
-                "chunk_index": c_index,
-                "score": score
-            })
-            
-    # Sort results by match relevance
-    results.sort(key=lambda x: x["score"], reverse=True)
+        source = c.source_filename if hasattr(c, "source_filename") else c.get("source_filename", c.get("source", ""))
+        if source != filename:
+            continue
+        doc_chunks.append(c if isinstance(c, Chunk) else Chunk(c.get("content", ""), c.get("chunk_index", 0), source))
+    found = retrieve(query, doc_chunks, top_k=5) if query and filename and doc_chunks else []
+    status = get_retrieval_status() if query and filename and doc_chunks else {"method": "not_run", "fallback": False}
     persist_session(session_id, state)
-    return {"results": results, "session_id": session_id}
+    return {"results": [{"content": c.content, "chunk_index": c.chunk_index, "score": c.score} for c in found], "session_id": session_id, "retrieval_status": status}
 
 
 @app.delete("/api/session/{session_id}/doc/{filename}")
@@ -616,18 +601,8 @@ async def generate_quiz_endpoint(session_id: Optional[str] = Query(None)):
         quiz_json["topic"] = topic
         return quiz_json
     except Exception as e:
-        print(f"[Quiz Generation Error] {e}")
-        return {
-            "topic": topic,
-            "question": f"Manakah dari berikut ini yang merupakan konsep dasar dari {topic}?",
-            "options": [
-                {"key": "A", "text": "Mengumpulkan data secara acak tanpa tujuan analitis."},
-                {"key": "B", "text": "Penerapan algoritma cerdas untuk mengekstrak pola kognitif yang berguna."},
-                {"key": "C", "text": "Menghapus seluruh memori cache server secara berkala."},
-                {"key": "D", "text": "Membeli perangkat keras termahal untuk mempercepat komputasi biasa."}
-            ],
-            "correct": "B"
-        }
+        print(f"[Generation Error] {type(e).__name__}")
+        raise HTTPException(status_code=503, detail="Kuis belum berhasil dibuat. Silakan coba lagi.") from e
 
 
 @app.post("/api/quiz/submit")
@@ -729,20 +704,8 @@ async def generate_mindmap_endpoint(req: MindMapRequest):
         mindmap_json = json.loads(clean_text)
         return mindmap_json
     except Exception as e:
-        print(f"[MindMap Generation Error] {e}")
-        return {
-            "nodes": [
-                {"id": "1", "label": topic, "type": "root", "desc": f"Topik utama tentang {topic}."},
-                {"id": "2", "label": "Konsep Dasar", "type": "branch", "desc": "Dasar-dasar dan fundamental penting."},
-                {"id": "3", "label": "Penerapan Praktis", "type": "branch", "desc": "Bagaimana konsep ini diterapkan di dunia nyata."},
-                {"id": "4", "label": "Tantangan Utama", "type": "branch", "desc": "Hambatan dan tantangan dalam mempelajari topik ini."}
-            ],
-            "edges": [
-                {"source": "1", "target": "2"},
-                {"source": "1", "target": "3"},
-                {"source": "1", "target": "4"}
-            ]
-        }
+        print(f"[Generation Error] {type(e).__name__}")
+        raise HTTPException(status_code=503, detail="Peta konsep belum berhasil dibuat. Silakan coba lagi.") from e
 
 
 @app.post("/api/mindmap/expand")
@@ -808,19 +771,8 @@ async def expand_mindmap_endpoint(req: MindMapExpandRequest):
         expansion_json = json.loads(clean_text)
         return expansion_json
     except Exception as e:
-        print(f"[MindMap Expansion Error] {e}")
-        new_id_1 = f"sub-{req.node_id}-1"
-        new_id_2 = f"sub-{req.node_id}-2"
-        return {
-            "nodes": [
-                {"id": new_id_1, "label": f"Detail {req.node_label}", "type": "sub-branch", "desc": f"Penjelasan detail mengenai {req.node_label}."},
-                {"id": new_id_2, "label": f"Contoh {req.node_label}", "type": "sub-branch", "desc": f"Contoh penerapan nyata dari {req.node_label}."}
-            ],
-            "edges": [
-                {"source": req.node_id, "target": new_id_1},
-                {"source": req.node_id, "target": new_id_2}
-            ]
-        }
+        print(f"[Generation Error] {type(e).__name__}")
+        raise HTTPException(status_code=503, detail="Subtopik belum berhasil dibuat. Silakan coba lagi.") from e
 
 
 if __name__ == "__main__":

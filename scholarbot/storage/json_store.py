@@ -77,7 +77,8 @@ def save_session(session_id: str, state: dict) -> bool:
                     "content": chunk.content,
                     "chunk_index": chunk.chunk_index,
                     "source_filename": chunk.source_filename,
-                    "embedding": getattr(chunk, "embedding", None)
+                    "embedding": getattr(chunk, "embedding", None),
+                    "embedding_cache_key": getattr(chunk, "embedding_cache_key", None)
                 })
             elif isinstance(chunk, dict):
                 serializable_chunks.append(chunk)
@@ -138,7 +139,8 @@ def load_session(session_id: str) -> Optional[dict]:
                     content=c.get("content", ""),
                     chunk_index=c.get("chunk_index", 0),
                     source_filename=c.get("source_filename", c.get("source", "")),
-                    embedding=c.get("embedding", None)
+                    embedding=c.get("embedding", None),
+                    embedding_cache_key=c.get("embedding_cache_key", None)
                 ))
             else:
                 chunks.append(c)

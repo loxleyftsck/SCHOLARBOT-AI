@@ -22,3 +22,12 @@ scholarbot-web/.DS_Store
 .ppt-build/
 *.backup
 dist-demo/
+.wrangler/
+
+# Isolated evaluation dependencies and downloaded model weights
+.venv-eval/
+.eval-cache/
+
+# Python caches in evaluation scripts and nested packages
+__pycache__/
+*.py[cod]

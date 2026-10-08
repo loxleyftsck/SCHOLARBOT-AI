@@ -1,0 +1,33 @@
+{
+  "sample_ids": [
+    "d06",
+    "d08",
+    "p07",
+    "m04",
+    "m06",
+    "m07",
+    "f04",
+    "n04",
+    "n05",
+    "n06",
+    "n07",
+    "n08",
+    "n09",
+    "n10"
+  ],
+  "completed": 14,
+  "calls": 14,
+  "model": "openai/gpt-oss-120b",
+  "usage": {
+    "prompt_tokens": 12414,
+    "completion_tokens": 4434,
+    "total_tokens": 16848
+  },
+  "latency_ms_p50": 5940.736899999138,
+  "latency_ms_p95": 8635.370160001003,
+  "provider_cost_usd": null,
+  "cost_note": "No billing data queried; token usage is measured but zero-dollar cost is not asserted.",
+  "response_sha256": "f4382cf2ff810e55df209feef565ddd61844079f3462f20ad3cbfe7eca0be2b7",
+  "review_file": "manual-review.json",
+  "source_capture_note": "Prompt files copied after generation without changes; ranking snapshot is from the prior run matching generation version."
+}

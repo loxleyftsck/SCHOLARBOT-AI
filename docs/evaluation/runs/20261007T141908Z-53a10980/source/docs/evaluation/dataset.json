@@ -1,0 +1,724 @@
+{
+  "version": "pilot-id-v1",
+  "license": "CC0-1.0",
+  "provenance": "Materi dan pertanyaan sintetis ditulis untuk evaluasi; bukan data pengguna. Label dibuat dari fakta korpus.",
+  "segmentation": "Curated semantic paragraphs; ingest/chunker performance is excluded.",
+  "chunks": [
+    {
+      "id": "c01",
+      "document": "jaringan.txt",
+      "chunk_index": 0,
+      "text": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang."
+    },
+    {
+      "id": "c02",
+      "document": "jaringan.txt",
+      "chunk_index": 1,
+      "text": "UDP mengirim datagram tanpa jaminan urutan atau pengiriman ulang. UDP sesuai untuk suara langsung yang peka terhadap keterlambatan."
+    },
+    {
+      "id": "c03",
+      "document": "keuangan.txt",
+      "chunk_index": 0,
+      "text": "Anggaran proyek membagi biaya menjadi biaya tetap seperti sewa dan biaya variabel seperti bahan per unit."
+    },
+    {
+      "id": "c04",
+      "document": "keuangan.txt",
+      "chunk_index": 1,
+      "text": "Arus kas adalah uang yang benar-benar masuk dan keluar; laba menghitung pendapatan dikurangi beban termasuk transaksi belum dibayar."
+    },
+    {
+      "id": "c05",
+      "document": "antrean.txt",
+      "chunk_index": 0,
+      "text": "Antrean FIFO memproses tugas sesuai urutan kedatangan. Tugas yang masuk pertama dilayani pertama."
+    },
+    {
+      "id": "c06",
+      "document": "basis-data.txt",
+      "chunk_index": 0,
+      "text": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data."
+    },
+    {
+      "id": "c07",
+      "document": "basis-data.txt",
+      "chunk_index": 1,
+      "text": "Transaksi atomik menjalankan seluruh perubahan sebagai satu kesatuan; bila satu langkah gagal, seluruh perubahan dibatalkan."
+    },
+    {
+      "id": "c08",
+      "document": "biologi.txt",
+      "chunk_index": 0,
+      "text": "Fotosintesis menggunakan cahaya, air, dan karbon dioksida untuk menghasilkan gula serta melepaskan oksigen."
+    },
+    {
+      "id": "c09",
+      "document": "biologi.txt",
+      "chunk_index": 1,
+      "text": "Klorofil menyerap energi cahaya dan berada di kloroplas pada sel tumbuhan."
+    },
+    {
+      "id": "c10",
+      "document": "energi.txt",
+      "chunk_index": 0,
+      "text": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik."
+    },
+    {
+      "id": "c11",
+      "document": "energi.txt",
+      "chunk_index": 1,
+      "text": "Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya."
+    },
+    {
+      "id": "c12",
+      "document": "keamanan.txt",
+      "chunk_index": 0,
+      "text": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal."
+    },
+    {
+      "id": "c13",
+      "document": "keamanan.txt",
+      "chunk_index": 1,
+      "text": "Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli."
+    },
+    {
+      "id": "c14",
+      "document": "rag.txt",
+      "chunk_index": 0,
+      "text": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks."
+    },
+    {
+      "id": "c15",
+      "document": "belajar.txt",
+      "chunk_index": 0,
+      "text": "Latihan mengingat meminta siswa menjawab tanpa melihat catatan dahulu, kemudian memeriksa kesalahan dengan materi sumber."
+    },
+    {
+      "id": "c16",
+      "document": "jaringan.txt",
+      "chunk_index": 2,
+      "text": "DNS menerjemahkan nama domain menjadi alamat IP sehingga pengguna tidak perlu mengingat angka alamat server."
+    },
+    {
+      "id": "c17",
+      "document": "keuangan.txt",
+      "chunk_index": 2,
+      "text": "Titik impas tercapai ketika total pendapatan sama dengan total biaya; pada titik itu proyek belum memperoleh laba."
+    },
+    {
+      "id": "c18",
+      "document": "antrean.txt",
+      "chunk_index": 1,
+      "text": "Backpressure membatasi penerimaan tugas baru ketika konsumen terlalu lambat agar antrean tidak tumbuh tanpa batas."
+    },
+    {
+      "id": "c19",
+      "document": "basis-data.txt",
+      "chunk_index": 2,
+      "text": "Normalisasi memisahkan data yang berulang ke tabel terkait untuk mengurangi redundansi dan anomali pembaruan."
+    },
+    {
+      "id": "c20",
+      "document": "biologi.txt",
+      "chunk_index": 2,
+      "text": "Respirasi sel memecah gula untuk menyediakan energi yang dapat dipakai sel, termasuk pada tumbuhan."
+    },
+    {
+      "id": "c21",
+      "document": "energi.txt",
+      "chunk_index": 2,
+      "text": "Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen."
+    },
+    {
+      "id": "c22",
+      "document": "keamanan.txt",
+      "chunk_index": 2,
+      "text": "Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut."
+    },
+    {
+      "id": "c23",
+      "document": "rag.txt",
+      "chunk_index": 1,
+      "text": "BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian."
+    },
+    {
+      "id": "c24",
+      "document": "rag.txt",
+      "chunk_index": 2,
+      "text": "RRF menggabungkan daftar hasil berdasarkan peringkat, memakai kontribusi 1 dibagi konstanta ditambah peringkat, bukan menjumlahkan skor mentah."
+    },
+    {
+      "id": "c25",
+      "document": "belajar.txt",
+      "chunk_index": 1,
+      "text": "Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi."
+    },
+    {
+      "id": "c26",
+      "document": "arsip.txt",
+      "chunk_index": 0,
+      "text": "Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. "
+    },
+    {
+      "id": "c27",
+      "document": "arsip.txt",
+      "chunk_index": 1,
+      "text": "HTTP 404 berarti sumber tidak ditemukan."
+    }
+  ],
+  "questions": [
+    {
+      "id": "d01",
+      "category": "direct",
+      "question": "Bagaimana TCP menangani paket yang hilang?",
+      "gold_sources": [
+        "c01"
+      ],
+      "gold_answer": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang.",
+      "split": "tune",
+      "group": "fact-1"
+    },
+    {
+      "id": "d02",
+      "category": "direct",
+      "question": "Apakah UDP menjamin urutan pengiriman?",
+      "gold_sources": [
+        "c02"
+      ],
+      "gold_answer": "UDP mengirim datagram tanpa jaminan urutan atau pengiriman ulang. UDP sesuai untuk suara langsung yang peka terhadap keterlambatan.",
+      "split": "tune",
+      "group": "fact-2"
+    },
+    {
+      "id": "d03",
+      "category": "direct",
+      "question": "Apa perbedaan biaya tetap dan biaya variabel?",
+      "gold_sources": [
+        "c03"
+      ],
+      "gold_answer": "Anggaran proyek membagi biaya menjadi biaya tetap seperti sewa dan biaya variabel seperti bahan per unit.",
+      "split": "tune",
+      "group": "fact-3"
+    },
+    {
+      "id": "d04",
+      "category": "direct",
+      "question": "Apa perbedaan arus kas dan laba?",
+      "gold_sources": [
+        "c04"
+      ],
+      "gold_answer": "Arus kas adalah uang yang benar-benar masuk dan keluar; laba menghitung pendapatan dikurangi beban termasuk transaksi belum dibayar.",
+      "split": "tune",
+      "group": "fact-4"
+    },
+    {
+      "id": "d05",
+      "category": "direct",
+      "question": "Bagaimana urutan pelayanan antrean FIFO?",
+      "gold_sources": [
+        "c05"
+      ],
+      "gold_answer": "Antrean FIFO memproses tugas sesuai urutan kedatangan. Tugas yang masuk pertama dilayani pertama.",
+      "split": "tune",
+      "group": "fact-5"
+    },
+    {
+      "id": "d06",
+      "category": "direct",
+      "question": "Apa keuntungan dan biaya indeks basis data?",
+      "gold_sources": [
+        "c06"
+      ],
+      "gold_answer": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data.",
+      "split": "evaluation",
+      "group": "fact-6"
+    },
+    {
+      "id": "d07",
+      "category": "direct",
+      "question": "Apa yang terjadi bila satu langkah transaksi atomik gagal?",
+      "gold_sources": [
+        "c07"
+      ],
+      "gold_answer": "Transaksi atomik menjalankan seluruh perubahan sebagai satu kesatuan; bila satu langkah gagal, seluruh perubahan dibatalkan.",
+      "split": "evaluation",
+      "group": "fact-7"
+    },
+    {
+      "id": "d08",
+      "category": "direct",
+      "question": "Apa masukan dan keluaran fotosintesis?",
+      "gold_sources": [
+        "c08"
+      ],
+      "gold_answer": "Fotosintesis menggunakan cahaya, air, dan karbon dioksida untuk menghasilkan gula serta melepaskan oksigen.",
+      "split": "evaluation",
+      "group": "fact-8"
+    },
+    {
+      "id": "d09",
+      "category": "direct",
+      "question": "Di mana klorofil berada dan apa fungsinya?",
+      "gold_sources": [
+        "c09"
+      ],
+      "gold_answer": "Klorofil menyerap energi cahaya dan berada di kloroplas pada sel tumbuhan.",
+      "split": "evaluation",
+      "group": "fact-9"
+    },
+    {
+      "id": "d10",
+      "category": "direct",
+      "question": "Bagaimana panel surya mengubah energi?",
+      "gold_sources": [
+        "c10"
+      ],
+      "gold_answer": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik.",
+      "split": "evaluation",
+      "group": "fact-10"
+    },
+    {
+      "id": "d11",
+      "category": "direct",
+      "question": "Apa fungsi baterai ketika panel surya tidak menghasilkan daya?",
+      "gold_sources": [
+        "c11"
+      ],
+      "gold_answer": "Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya.",
+      "split": "evaluation",
+      "group": "fact-11"
+    },
+    {
+      "id": "d12",
+      "category": "direct",
+      "question": "Dapatkah hash dikembalikan menjadi pesan asal?",
+      "gold_sources": [
+        "c12"
+      ],
+      "gold_answer": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal.",
+      "split": "evaluation",
+      "group": "fact-12"
+    },
+    {
+      "id": "d13",
+      "category": "direct",
+      "question": "Bagaimana enkripsi mengembalikan pesan asli?",
+      "gold_sources": [
+        "c13"
+      ],
+      "gold_answer": "Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli.",
+      "split": "evaluation",
+      "group": "fact-13"
+    },
+    {
+      "id": "d14",
+      "category": "direct",
+      "question": "Apa peran retrieval sebelum generator menjawab?",
+      "gold_sources": [
+        "c14"
+      ],
+      "gold_answer": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks.",
+      "split": "evaluation",
+      "group": "fact-14"
+    },
+    {
+      "id": "d15",
+      "category": "direct",
+      "question": "Bagaimana langkah latihan mengingat?",
+      "gold_sources": [
+        "c15"
+      ],
+      "gold_answer": "Latihan mengingat meminta siswa menjawab tanpa melihat catatan dahulu, kemudian memeriksa kesalahan dengan materi sumber.",
+      "split": "evaluation",
+      "group": "fact-15"
+    },
+    {
+      "id": "p01",
+      "category": "paraphrase",
+      "question": "Layanan apa yang mencari angka alamat server dari nama situs?",
+      "gold_sources": [
+        "c16"
+      ],
+      "gold_answer": "DNS menerjemahkan nama domain menjadi alamat IP sehingga pengguna tidak perlu mengingat angka alamat server.",
+      "split": "tune",
+      "group": "fact-16"
+    },
+    {
+      "id": "p02",
+      "category": "paraphrase",
+      "question": "Kapan sebuah usaha menutup pengeluaran tanpa untung maupun rugi?",
+      "gold_sources": [
+        "c17"
+      ],
+      "gold_answer": "Titik impas tercapai ketika total pendapatan sama dengan total biaya; pada titik itu proyek belum memperoleh laba.",
+      "split": "tune",
+      "group": "fact-17"
+    },
+    {
+      "id": "p03",
+      "category": "paraphrase",
+      "question": "Bagaimana menahan aliran pekerjaan saat pekerja kewalahan?",
+      "gold_sources": [
+        "c18"
+      ],
+      "gold_answer": "Backpressure membatasi penerimaan tugas baru ketika konsumen terlalu lambat agar antrean tidak tumbuh tanpa batas.",
+      "split": "tune",
+      "group": "fact-18"
+    },
+    {
+      "id": "p04",
+      "category": "paraphrase",
+      "question": "Mengapa informasi yang sama dipisah ke beberapa tabel berhubungan?",
+      "gold_sources": [
+        "c19"
+      ],
+      "gold_answer": "Normalisasi memisahkan data yang berulang ke tabel terkait untuk mengurangi redundansi dan anomali pembaruan.",
+      "split": "tune",
+      "group": "fact-19"
+    },
+    {
+      "id": "p05",
+      "category": "paraphrase",
+      "question": "Bagaimana tumbuhan memperoleh tenaga yang bisa digunakan sel dari gula?",
+      "gold_sources": [
+        "c20"
+      ],
+      "gold_answer": "Respirasi sel memecah gula untuk menyediakan energi yang dapat dipakai sel, termasuk pada tumbuhan.",
+      "split": "evaluation",
+      "group": "fact-20"
+    },
+    {
+      "id": "p06",
+      "category": "paraphrase",
+      "question": "Apa ukuran bagian tenaga masukan yang menjadi keluaran bermanfaat?",
+      "gold_sources": [
+        "c21"
+      ],
+      "gold_answer": "Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen.",
+      "split": "evaluation",
+      "group": "fact-21"
+    },
+    {
+      "id": "p07",
+      "category": "paraphrase",
+      "question": "Bedakan pemeriksaan siapa pengguna dengan pemeriksaan izin pengguna.",
+      "gold_sources": [
+        "c22"
+      ],
+      "gold_answer": "Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut.",
+      "split": "evaluation",
+      "group": "fact-22"
+    },
+    {
+      "id": "p08",
+      "category": "paraphrase",
+      "question": "Algoritme pencarian apa yang memperhitungkan kata langka serta panjang teks?",
+      "gold_sources": [
+        "c23"
+      ],
+      "gold_answer": "BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian.",
+      "split": "evaluation",
+      "group": "fact-23"
+    },
+    {
+      "id": "p09",
+      "category": "paraphrase",
+      "question": "Bagaimana menyatukan hasil pencarian bila besaran nilainya tidak sebanding?",
+      "gold_sources": [
+        "c24"
+      ],
+      "gold_answer": "RRF menggabungkan daftar hasil berdasarkan peringkat, memakai kontribusi 1 dibagi konstanta ditambah peringkat, bukan menjumlahkan skor mentah.",
+      "split": "evaluation",
+      "group": "fact-24"
+    },
+    {
+      "id": "p10",
+      "category": "paraphrase",
+      "question": "Mengapa pengulangan pelajaran dijadwalkan berjeda dan bukan sekaligus?",
+      "gold_sources": [
+        "c25"
+      ],
+      "gold_answer": "Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi.",
+      "split": "evaluation",
+      "group": "fact-25"
+    },
+    {
+      "id": "m01",
+      "category": "multi_document",
+      "question": "Bandingkan pengiriman ulang TCP dengan ketahanan antrean melalui backpressure.",
+      "gold_sources": [
+        "c01",
+        "c18"
+      ],
+      "gold_answer": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang. Backpressure membatasi penerimaan tugas baru ketika konsumen terlalu lambat agar antrean tidak tumbuh tanpa batas.",
+      "split": "tune",
+      "group": "comparison-1"
+    },
+    {
+      "id": "m02",
+      "category": "multi_document",
+      "question": "Bedakan biaya proyek dengan titik impas.",
+      "gold_sources": [
+        "c03",
+        "c17"
+      ],
+      "gold_answer": "Anggaran proyek membagi biaya menjadi biaya tetap seperti sewa dan biaya variabel seperti bahan per unit. Titik impas tercapai ketika total pendapatan sama dengan total biaya; pada titik itu proyek belum memperoleh laba.",
+      "split": "tune",
+      "group": "comparison-2"
+    },
+    {
+      "id": "m03",
+      "category": "multi_document",
+      "question": "Bandingkan urutan FIFO dan jaminan urutan TCP.",
+      "gold_sources": [
+        "c05",
+        "c01"
+      ],
+      "gold_answer": "Antrean FIFO memproses tugas sesuai urutan kedatangan. Tugas yang masuk pertama dilayani pertama. TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang.",
+      "split": "tune",
+      "group": "comparison-3"
+    },
+    {
+      "id": "m04",
+      "category": "multi_document",
+      "question": "Bandingkan fungsi indeks basis data dengan BM25 pada pencarian.",
+      "gold_sources": [
+        "c06",
+        "c23"
+      ],
+      "gold_answer": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data. BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian.",
+      "split": "evaluation",
+      "group": "comparison-4"
+    },
+    {
+      "id": "m05",
+      "category": "multi_document",
+      "question": "Bedakan fotosintesis dan respirasi sel dari peran gula.",
+      "gold_sources": [
+        "c08",
+        "c20"
+      ],
+      "gold_answer": "Fotosintesis menggunakan cahaya, air, dan karbon dioksida untuk menghasilkan gula serta melepaskan oksigen. Respirasi sel memecah gula untuk menyediakan energi yang dapat dipakai sel, termasuk pada tumbuhan.",
+      "split": "evaluation",
+      "group": "comparison-5"
+    },
+    {
+      "id": "m06",
+      "category": "multi_document",
+      "question": "Jelaskan hubungan panel surya, baterai, dan efisiensi energi.",
+      "gold_sources": [
+        "c10",
+        "c11",
+        "c21"
+      ],
+      "gold_answer": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik. Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya. Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen.",
+      "split": "evaluation",
+      "group": "comparison-6"
+    },
+    {
+      "id": "m07",
+      "category": "multi_document",
+      "question": "Bedakan hash, enkripsi, dan pemeriksaan identitas.",
+      "gold_sources": [
+        "c12",
+        "c13",
+        "c22"
+      ],
+      "gold_answer": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal. Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli. Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut.",
+      "split": "evaluation",
+      "group": "comparison-7"
+    },
+    {
+      "id": "m08",
+      "category": "multi_document",
+      "question": "Bagaimana retrieval dan RRF bekerja dalam alur pencarian?",
+      "gold_sources": [
+        "c14",
+        "c24"
+      ],
+      "gold_answer": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks. RRF menggabungkan daftar hasil berdasarkan peringkat, memakai kontribusi 1 dibagi konstanta ditambah peringkat, bukan menjumlahkan skor mentah.",
+      "split": "evaluation",
+      "group": "comparison-8"
+    },
+    {
+      "id": "m09",
+      "category": "multi_document",
+      "question": "Bandingkan latihan mengingat dan pengulangan berjarak.",
+      "gold_sources": [
+        "c15",
+        "c25"
+      ],
+      "gold_answer": "Latihan mengingat meminta siswa menjawab tanpa melihat catatan dahulu, kemudian memeriksa kesalahan dengan materi sumber. Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi.",
+      "split": "evaluation",
+      "group": "comparison-9"
+    },
+    {
+      "id": "m10",
+      "category": "multi_document",
+      "question": "Bedakan transaksi atomik dan normalisasi untuk menjaga data.",
+      "gold_sources": [
+        "c07",
+        "c19"
+      ],
+      "gold_answer": "Transaksi atomik menjalankan seluruh perubahan sebagai satu kesatuan; bila satu langkah gagal, seluruh perubahan dibatalkan. Normalisasi memisahkan data yang berulang ke tabel terkait untuk mengurangi redundansi dan anomali pembaruan.",
+      "split": "evaluation",
+      "group": "comparison-10"
+    },
+    {
+      "id": "f01",
+      "category": "follow_up",
+      "question": "Jelaskan lagi perannya saat malam.",
+      "gold_sources": [
+        "c11"
+      ],
+      "gold_answer": "Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya.",
+      "split": "evaluation",
+      "group": "fact-11",
+      "previous_question": "Apa fungsi baterai ketika panel surya tidak menghasilkan daya?",
+      "resolved_query": "Apa fungsi baterai ketika panel surya tidak menghasilkan daya? Jelaskan lagi perannya saat malam."
+    },
+    {
+      "id": "f02",
+      "category": "follow_up",
+      "question": "Apakah bisa dipulihkan ke teks awal?",
+      "gold_sources": [
+        "c12"
+      ],
+      "gold_answer": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal.",
+      "split": "evaluation",
+      "group": "fact-12",
+      "previous_question": "Dapatkah hash dikembalikan menjadi pesan asal?",
+      "resolved_query": "Dapatkah hash dikembalikan menjadi pesan asal? Apakah bisa dipulihkan ke teks awal?"
+    },
+    {
+      "id": "f03",
+      "category": "follow_up",
+      "question": "Apa yang diperlukan untuk membukanya?",
+      "gold_sources": [
+        "c13"
+      ],
+      "gold_answer": "Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli.",
+      "split": "evaluation",
+      "group": "fact-13",
+      "previous_question": "Bagaimana enkripsi mengembalikan pesan asli?",
+      "resolved_query": "Bagaimana enkripsi mengembalikan pesan asli? Apa yang diperlukan untuk membukanya?"
+    },
+    {
+      "id": "f04",
+      "category": "follow_up",
+      "question": "Mengapa tahap itu dilakukan dulu?",
+      "gold_sources": [
+        "c14"
+      ],
+      "gold_answer": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks.",
+      "split": "evaluation",
+      "group": "fact-14",
+      "previous_question": "Apa peran retrieval sebelum generator menjawab?",
+      "resolved_query": "Apa peran retrieval sebelum generator menjawab? Mengapa tahap itu dilakukan dulu?"
+    },
+    {
+      "id": "f05",
+      "category": "follow_up",
+      "question": "Bagaimana saya mencoba langkah itu?",
+      "gold_sources": [
+        "c15"
+      ],
+      "gold_answer": "Latihan mengingat meminta siswa menjawab tanpa melihat catatan dahulu, kemudian memeriksa kesalahan dengan materi sumber.",
+      "split": "evaluation",
+      "group": "fact-15",
+      "previous_question": "Bagaimana langkah latihan mengingat?",
+      "resolved_query": "Bagaimana langkah latihan mengingat? Bagaimana saya mencoba langkah itu?"
+    },
+    {
+      "id": "n01",
+      "category": "no_answer",
+      "question": "Berapa harga router merek Orion tahun 2026?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "tune",
+      "group": "unanswerable-1"
+    },
+    {
+      "id": "n02",
+      "category": "no_answer",
+      "question": "Berapa saldo rekening pemilik proyek?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "tune",
+      "group": "unanswerable-2"
+    },
+    {
+      "id": "n03",
+      "category": "no_answer",
+      "question": "Apa nama petugas antrean di kampus?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "tune",
+      "group": "unanswerable-3"
+    },
+    {
+      "id": "n04",
+      "category": "no_answer",
+      "question": "Berapa kapasitas baterai dalam ampere jam pada proyek ini?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-4"
+    },
+    {
+      "id": "n05",
+      "category": "no_answer",
+      "question": "Apa kunci enkripsi yang digunakan server kampus?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-5"
+    },
+    {
+      "id": "n06",
+      "category": "no_answer",
+      "question": "Siapa penemu algoritme BM25 dan kapan lahirnya?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-6"
+    },
+    {
+      "id": "n07",
+      "category": "no_answer",
+      "question": "Berapa jumlah kloroplas pada tanaman contoh?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-7"
+    },
+    {
+      "id": "n08",
+      "category": "no_answer",
+      "question": "Berapa lama jadwal spaced repetition yang optimal untuk semua siswa?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-8"
+    },
+    {
+      "id": "n09",
+      "category": "no_answer",
+      "question": "Apa port TCP yang dipakai aplikasi dalam materi?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-9"
+    },
+    {
+      "id": "n10",
+      "category": "no_answer",
+      "question": "Berapa persen laba proyek berdasarkan laporan terakhir?",
+      "gold_sources": [],
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "split": "evaluation",
+      "group": "unanswerable-10"
+    }
+  ]
+}

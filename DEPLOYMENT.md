@@ -47,9 +47,9 @@ Origin preview hanya diizinkan jika ditambahkan secara eksplisit, dipisah koma. 
 
 Render Free dapat tidur setelah 15 menit tanpa trafik dan biasanya membutuhkan sekitar satu menit untuk bangun. UI mencoba health check saat aplikasi dibuka, maksimal sekitar 90 detik, tanpa ping berkala untuk mencegah server tidur.
 Riwayat dan dokumen memakai memori serta filesystem sementara; data dapat hilang saat restart, redeploy, atau server tidur. Jangan gunakan dokumen pribadi.
-Unggahan dibatasi 5 MB per file. Blueprint membatasi seluruh POST menjadi 10 permintaan per menit untuk semua pengunjung bersama; batas ini tidak menggantikan kuota harian Groq. Pantau penggunaan di dashboard Groq, dan suspend backend saat demo tidak diperlukan.
+Unggahan dibatasi 5 MB per file. Blueprint membatasi seluruh POST dan GET `/api/quiz` menjadi 10 permintaan per menit dan 100 permintaan dalam 24 jam bergulir untuk semua pengunjung bersama. Kuota disimpan pada satu worker dan reset saat restart; ini tidak menggantikan batas token dan kuota akun Groq. Pantau penggunaan di dashboard Groq, dan suspend backend saat demo tidak diperlukan.
 Satu worker dipakai karena sesi dan pembatas permintaan masih di memori. Demo ini belum memakai autentikasi atau penyimpanan permanen.
-Retrieval semantik menggunakan layanan eksternal dan memiliki fallback keyword; kualitas retrieval dapat berbeda ketika layanan embedding tidak tersedia.
+Retrieval default memakai BM25 lokal berdasarkan hasil pilot Fase B. Mode dense bersifat opsional dan memakai fallback keyword yang ditampilkan jika provider embedding tidak tersedia.
 
 ## Build lokal
 

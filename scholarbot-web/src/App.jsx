@@ -597,6 +597,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
   const [score, setScore] = useState(0);
   const [quizData, setQuizData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [quizError, setQuizError] = useState('');
 
   // Defensively parse quiz options to array format (BUG-03)
   const optionsList = useMemo(() => {
@@ -636,6 +637,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 
   const fetchQuizQuestion = async () => {
     setLoading(true);
+    setQuizError('');
     try {
       const response = await fetch(`${API_BASE_URL}/api/quiz?session_id=${sessionId}`);
       if (!response.ok) throw new Error("Gagal mengambil kuis");
@@ -643,20 +645,10 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
       setQuizData(data);
       setCurrentStep(1);
     } catch (err) {
-      console.warn("Backend quiz failed, using fallback:", err);
-      // Fallback kuis jika API gagal
-      setQuizData({
-        topic: "Machine Learning & AI",
-        question: "Manakah pernyataan berikut yang paling tepat menggambarkan 'Supervised Learning'?",
-        options: [
-          { key: "A", text: "Proses melatih model kecerdasan buatan tanpa pengawasan manusia sama sekali." },
-          { key: "B", text: "Melatih model komputer menggunakan data historis yang sudah diberi label jawaban benar." },
-          { key: "C", text: "Algoritma tebak-tebakan acak menggunakan trial-and-error berulang kali." },
-          { key: "D", text: "Mengelompokkan data pelanggan berdasarkan kesamaan perilaku tanpa pembagian kategori." }
-        ],
-        correct: "B"
-      });
-      setCurrentStep(1);
+      console.warn("Quiz generation failed:", err);
+      setQuizData(null);
+      setCurrentStep(0);
+      setQuizError('Kuis belum berhasil dibuat. Coba lagi; belum ada hasil yang dinilai.');
     } finally {
       setLoading(false);
     }
@@ -710,6 +702,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
         </span>
       </div>
 
+      {quizError && <p role="alert" className="text-sm text-red-700 mb-3">{quizError}</p>}
       <AnimatePresence mode="wait">
         {currentStep === 0 ? (
           <motion.div 
@@ -724,7 +717,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
             </div>
             <h5 className="font-serif text-text-primary text-base mb-1.5">Uji Pemahaman Anda</h5>
             <p className="text-xs text-text-muted max-w-sm mx-auto mb-5">
-              Mari uji pemahaman kognitif Anda dengan kuis singkat yang dirancang khusus oleh AI untuk menguji memori jangka panjang Anda.
+              Coba satu soal dari topik percakapan. Hasil soal ini belum mengukur penguasaan seluruh materi.
             </p>
             <motion.button
               whileHover={{ scale: 1.04 }}
@@ -843,7 +836,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 
             <h5 className="font-serif text-text-primary text-lg mb-1">Hasil Kuis Akademik</h5>
             <p className="text-xs text-text-muted mb-4">
-              {score === 100 ? "Luar biasa! Pemahaman Anda dinilai sempurna!" : "Mari coba kembali untuk memperdalam pemahaman!"}
+              {score === 100 ? "Jawaban soal ini benar. Lanjutkan latihan untuk menguji konsep lain." : "Mari coba kembali untuk memperdalam pemahaman!"}
             </p>
             
             <div className="bg-background border border-border px-6 py-3 rounded-2xl mb-6">
@@ -886,6 +879,7 @@ function InteractiveQuiz({ sessionId, onScoreUpdate }) {
 export default function App() {
   const [backendStatus, setBackendStatus] = useState('waking');
   const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [featureError, setFeatureError] = useState('');
   const [activeMode, setActiveMode] = useState('belajar'); // 'belajar', 'rangkuman', 'latihan', 'mindmap'
   const [personality, setPersonality] = useState('😊 Santai & Friendly');
   const [user_name, setUserName] = useState(() => localStorage.getItem('scholarbot_user_name') || 'Budi');
@@ -910,11 +904,6 @@ export default function App() {
     return fresh;
   });
 
-  // Gamification progress states
-  const [mlProgress, setMlProgress] = useState(78);
-  const [chemProgress, setChemProgress] = useState(45);
-  const [historyProgress, setHistoryProgress] = useState(60);
-  
   // Chat input
   const [chatInput, setChatInput] = useState('');
   // Citation system: which message's source panel is open, and which source is spotlighted
@@ -957,17 +946,8 @@ export default function App() {
 
   // Mindmap dynamic states
   const [mindmapTopic, setMindmapTopic] = useState('Machine Learning');
-  const [mindmapNodes, setMindmapNodes] = useState([
-    { id: '1', label: 'Machine Learning', type: 'root', desc: 'Topik utama yang sedang kita bedah bersama.' },
-    { id: '2', label: 'Supervised', type: 'branch', desc: 'Belajar dari data berlabel. Contoh: Regresi & Klasifikasi.' },
-    { id: '3', label: 'Unsupervised', type: 'branch', desc: 'Mencari struktur tersembunyi tanpa label. Contoh: Clustering.' },
-    { id: '4', label: 'Reinforcement', type: 'branch', desc: 'Sistem belajar mandiri menggunakan reward & punishment.' }
-  ]);
-  const [mindmapEdges, setMindmapEdges] = useState([
-    { source: '1', target: '2' },
-    { source: '1', target: '3' },
-    { source: '1', target: '4' }
-  ]);
+  const [mindmapNodes, setMindmapNodes] = useState([]);
+  const [mindmapEdges, setMindmapEdges] = useState([]);
   const [isGeneratingMindMap, setIsGeneratingMindMap] = useState(false);
   const [isExpandingMindMap, setIsExpandingMindMap] = useState(false);
 
@@ -1013,6 +993,7 @@ export default function App() {
   const handleGenerateMindMap = async (topic) => {
     if (!topic || !topic.trim()) return;
     setIsGeneratingMindMap(true);
+    setFeatureError('');
     
     // Sanitize input topic using getActualTopic helper
     const sanitizedTopic = getActualTopic(topic);
@@ -1033,19 +1014,8 @@ export default function App() {
         setMindmapEdges(data.edges);
       }
     } catch (err) {
-      console.warn("Gagal membuat mindmap, menggunakan fallback:", err);
-      setMindmapTopic(sanitizedTopic);
-      setMindmapNodes([
-        { id: '1', label: sanitizedTopic, type: 'root', desc: `Topik utama tentang ${sanitizedTopic}.` },
-        { id: '2', label: 'Konsep Dasar', type: 'branch', desc: 'Dasar-dasar dan fundamental penting.' },
-        { id: '3', label: 'Penerapan Praktis', type: 'branch', desc: 'Bagaimana konsep ini diterapkan di dunia nyata.' },
-        { id: '4', label: 'Tantangan Utama', type: 'branch', desc: 'Hambatan dan tantangan dalam mempelajari topik ini.' }
-      ]);
-      setMindmapEdges([
-        { source: '1', target: '2' },
-        { source: '1', target: '3' },
-        { source: '1', target: '4' }
-      ]);
+      console.warn("Mind map generation failed:", err);
+      setFeatureError('Peta konsep belum berhasil dibuat. Coba lagi; hasil sebelumnya tidak diubah.');
     } finally {
       setIsGeneratingMindMap(false);
     }
@@ -1054,6 +1024,7 @@ export default function App() {
   const handleExpandMindMapNode = async (nodeId, nodeLabel) => {
     if (isExpandingMindMap) return;
     setIsExpandingMindMap(true);
+    setFeatureError('');
     try {
       const response = await fetch(`${API_BASE_URL}/api/mindmap/expand`, {
         method: 'POST',
@@ -1077,19 +1048,8 @@ export default function App() {
         setMindmapEdges(prev => [...prev, ...data.edges]);
       }
     } catch (err) {
-      console.warn("Gagal mengekspansi subtopik, menggunakan fallback:", err);
-      const newId1 = `sub-${nodeId}-${Date.now()}-1`;
-      const newId2 = `sub-${nodeId}-${Date.now()}-2`;
-      setMindmapNodes(prev => [
-        ...prev,
-        { id: newId1, label: `Detail ${nodeLabel}`, type: 'sub-branch', desc: `Detail lebih lanjut mengenai subtopik ${nodeLabel}.` },
-        { id: newId2, label: `Studi Kasus`, type: 'sub-branch', desc: `Studi kasus nyata tentang penerapan ${nodeLabel}.` }
-      ]);
-      setMindmapEdges(prev => [
-        ...prev,
-        { source: nodeId, target: newId1 },
-        { source: nodeId, target: newId2 }
-      ]);
+      console.warn("Mind map expansion failed:", err);
+      setFeatureError('Subtopik belum berhasil dibuat. Coba lagi; tidak ada node contoh yang ditambahkan.');
     } finally {
       setIsExpandingMindMap(false);
     }
@@ -1097,7 +1057,7 @@ export default function App() {
 
   // Automatically generate or update mind map when activeMode is changed to mindmap
   useEffect(() => {
-    if (activeMode === 'mindmap') {
+    if (activeMode === 'mindmap' && backendStatus === 'ready') {
       const userMessages = messages.filter(m => m.role === 'user');
       if (userMessages.length > 0) {
         const lastUserMsg = userMessages[userMessages.length - 1].content;
@@ -1107,7 +1067,7 @@ export default function App() {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeMode]);
+  }, [activeMode, backendStatus]);
 
   
   // Ref for auto scroll
@@ -1206,13 +1166,21 @@ export default function App() {
 
         setIsTyping(false);
 
+        let retrievalStatus = null;
+        try {
+          retrievalStatus = JSON.parse(response.headers.get("X-Retrieval-Status") || "null");
+        } catch {
+          // Older backends may not provide retrieval metadata.
+        }
+
         const botMsgId = `bot-${Date.now()}`;
         const botMsg = {
           id: botMsgId,
           role: "assistant",
           content: "",
           time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
-          sources: retrievedSources
+          sources: retrievedSources,
+          retrieval_status: retrievalStatus
         };
         setMessages(prev => [...prev, botMsg]);
 
@@ -1642,6 +1610,7 @@ export default function App() {
 
       {/* ─── RIGHT WORKSPACE / CHAT PANEL ───────────────────────────────────────── */}
       <main className="flex-1 flex flex-col justify-between overflow-hidden relative">
+        {featureError && <div role="alert" className="px-6 py-3 text-sm text-red-700">{featureError}<button className="underline ml-3" onClick={() => setFeatureError('')}>Tutup</button></div>}
         <div role="status" aria-live="polite" className="px-6 py-3 text-sm bg-slate-50 border-b border-slate-200 text-slate-700">
           {backendStatus === 'waking' && 'Menyiapkan demo… Server gratis mungkin perlu sekitar satu menit untuk bangun.'}
           {backendStatus === 'ready' && 'Demo siap. Riwayat dan dokumen bersifat sementara; gunakan materi contoh tanpa data pribadi.'}
@@ -1699,14 +1668,14 @@ export default function App() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-text-primary">Machine Learning</span>
-                          <span className="text-[10px] text-text-muted mt-0.5">Progres: {mlProgress}%</span>
+                          <span className="text-[10px] text-text-muted mt-0.5">Status: belum dinilai</span>
                         </div>
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
                           <motion.div 
                             initial={{ width: 0 }}
-                            animate={{ width: `${mlProgress}%` }}
+                            animate={{ width: '0%' }}
                             transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.1 }}
                             className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
                           />
@@ -1728,14 +1697,14 @@ export default function App() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-text-primary">Kimia: Stoikiometri</span>
-                          <span className="text-[10px] text-text-muted mt-0.5">Progres: {chemProgress}%</span>
+                          <span className="text-[10px] text-text-muted mt-0.5">Status: belum dinilai</span>
                         </div>
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
                           <motion.div 
                             initial={{ width: 0 }}
-                            animate={{ width: `${chemProgress}%` }}
+                            animate={{ width: '0%' }}
                             transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.2 }}
                             className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
                           />
@@ -1757,14 +1726,14 @@ export default function App() {
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-bold text-text-primary">Perang Dunia II</span>
-                          <span className="text-[10px] text-text-muted mt-0.5">Progres: {historyProgress}%</span>
+                          <span className="text-[10px] text-text-muted mt-0.5">Status: belum dinilai</span>
                         </div>
                       </div>
                       <div className="w-full">
                         <div className="h-1 bg-divider rounded-full overflow-hidden mb-1.5">
                           <motion.div 
                             initial={{ width: 0 }}
-                            animate={{ width: `${historyProgress}%` }}
+                            animate={{ width: '0%' }}
                             transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.3 }}
                             className="h-full bg-gradient-to-r from-walnut to-primary rounded-full" 
                           />
@@ -1847,6 +1816,11 @@ export default function App() {
                           </div>
 
                           {/* ─── RAG SOURCE VISUALIZER & RELEVANCE INDICATOR (v3.2 ROADMAP) ─── */}
+                            {isBot && msg.retrieval_status?.fallback && (
+                              <p className="mt-2 text-xs text-text-muted" role="status">
+                                Pencarian kata kunci dipakai karena embedding belum tersedia atau gagal divalidasi.
+                              </p>
+                            )}
                           {isBot && msg.sources && msg.sources.length > 0 && (() => {
                             const citedIds = parseCitationIds(msg.content, msg.sources.length);
                             return (
@@ -1872,7 +1846,7 @@ export default function App() {
                                         : 'Belum ada kutipan inline'}
                                     </span>
                                     <span className="text-[8px] px-2 py-0.5 rounded-full bg-walnut/10 text-walnut font-bold">
-                                      Relevansi: {Math.min(100, Math.round((msg.sources[0]?.score || 0) * 100))}%
+                                      Skor pencarian: {Number(msg.sources[0]?.score || 0).toFixed(2)}
                                     </span>
                                     <ChevronDown className="w-3 h-3 text-text-muted group-open:rotate-180 transition-transform" />
                                   </div>
@@ -2032,16 +2006,6 @@ export default function App() {
               >
                 <InteractiveQuiz 
                   sessionId={sessionId} 
-                  onScoreUpdate={(topic, isCorrect) => {
-                    const tLower = topic.toLowerCase();
-                    if (tLower.includes("machine") || tLower.includes("learning") || tLower.includes("ai")) {
-                      setMlProgress(prev => Math.min(100, prev + (isCorrect ? 8 : 2)));
-                    } else if (tLower.includes("kimia") || tLower.includes("stoikiometri") || tLower.includes("chem")) {
-                      setChemProgress(prev => Math.min(100, prev + (isCorrect ? 8 : 2)));
-                    } else if (tLower.includes("perang") || tLower.includes("dunia") || tLower.includes("sejarah") || tLower.includes("history")) {
-                      setHistoryProgress(prev => Math.min(100, prev + (isCorrect ? 8 : 2)));
-                    }
-                  }} 
                 />
               </motion.div>
             )}
@@ -2194,7 +2158,7 @@ export default function App() {
                         <div key={rIdx} className="p-2.5 rounded-lg border border-border bg-background hover:border-walnut transition-colors">
                           <div className="flex justify-between items-center mb-1 text-[8px] font-semibold text-text-muted">
                             <span>Bagian #{res.chunk_index + 1}</span>
-                            <span className="text-walnut">Relevansi: {Math.round(res.score * 100)}%</span>
+                            <span className="text-walnut">Skor pencarian: {Number(res.score || 0).toFixed(2)}</span>
                           </div>
                           <p className="text-[9px] leading-relaxed text-text-body font-mono whitespace-pre-wrap">
                             {res.content}

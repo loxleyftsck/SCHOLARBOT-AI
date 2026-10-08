@@ -1,0 +1,688 @@
+{
+  "status": "completed",
+  "model": "openai/gpt-oss-120b",
+  "temperature": 0.7,
+  "max_tokens": 900,
+  "sample_ids": [
+    "d06",
+    "d08",
+    "p07",
+    "m04",
+    "m06",
+    "m07",
+    "f04",
+    "n04",
+    "n05",
+    "n06",
+    "n07",
+    "n08",
+    "n09",
+    "n10"
+  ],
+  "dataset_sha256": "58ad12a03e0fa0673f84f0ec0a7289e34c8dad78f3f4a0226bb84cae0dc23c70",
+  "scope": "RAG prompt + BM25 top3, no full API/UI/session workflow",
+  "manual_claim_review": "pending",
+  "provider_cost_usd": null,
+  "calls": 14,
+  "rows": [
+    {
+      "id": "d06",
+      "status": "completed",
+      "category": "direct",
+      "question": "Apa keuntungan dan biaya indeks basis data?",
+      "gold_answer": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "basis-data.txt",
+          "chunk_index": 0,
+          "score": 12.2719,
+          "content": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data."
+        },
+        {
+          "id": 2,
+          "source": "keuangan.txt",
+          "chunk_index": 0,
+          "score": 3.7349,
+          "content": "Anggaran proyek membagi biaya menjadi biaya tetap seperti sewa dan biaya variabel seperti bahan per unit."
+        },
+        {
+          "id": 3,
+          "source": "jaringan.txt",
+          "chunk_index": 0,
+          "score": 2.4632,
+          "content": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang."
+        }
+      ],
+      "answer": "Keuntungan utama indeks basis data adalah **mempercepat pencarian baris**, sehingga query dapat dijalankan jauh lebih cepat dibandingkan tanpa indeks 📈.  \n\nNamun, ada dua biaya yang perlu dipertimbangkan:  \n1. **Menambah ruang penyimpanan** karena setiap indeks memerlukan struktur data tambahan di disk 🗄️.  \n2. **Meningkatkan biaya penulisan data**, karena setiap kali ada insert, update, atau delete, indeks harus diperbarui bersamaan dengan tabel utama 🔧.  \n\nJadi, indeks memberi performa baca yang lebih baik, tapi menambah beban pada penyimpanan dan proses penulisan. [1]",
+      "finish_reason": "stop",
+      "citation_ids": [
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 7557.673999999679,
+      "usage": {
+        "completion_tokens": 249,
+        "prompt_tokens": 885,
+        "total_tokens": 1134,
+        "completion_time": 0.52657706,
+        "completion_tokens_details": {
+          "reasoning_tokens": 99
+        },
+        "prompt_time": 0.053396619,
+        "prompt_tokens_details": null,
+        "queue_time": 6.414089351,
+        "total_time": 0.579973679
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "d08",
+      "status": "completed",
+      "category": "direct",
+      "question": "Apa masukan dan keluaran fotosintesis?",
+      "gold_answer": "Fotosintesis menggunakan cahaya, air, dan karbon dioksida untuk menghasilkan gula serta melepaskan oksigen.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "energi.txt",
+          "chunk_index": 2,
+          "score": 7.4577,
+          "content": "Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen."
+        },
+        {
+          "id": 2,
+          "source": "biologi.txt",
+          "chunk_index": 0,
+          "score": 3.7289,
+          "content": "Fotosintesis menggunakan cahaya, air, dan karbon dioksida untuk menghasilkan gula serta melepaskan oksigen."
+        }
+      ],
+      "answer": "Masukan (reactan) fotosintesis : cahaya, air, dan karbon dioksida. 🌞💧🟢  \nKeluaran (produk) fotosintesis : gula (seperti glukosa) dan oksigen yang dilepaskan ke udara. 🍬🌬️ [2]",
+      "finish_reason": "stop",
+      "citation_ids": [
+        2
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 7549.7921999995015,
+      "usage": {
+        "completion_tokens": 187,
+        "prompt_tokens": 852,
+        "total_tokens": 1039,
+        "completion_time": 0.398327738,
+        "completion_tokens_details": {
+          "reasoning_tokens": 111
+        },
+        "prompt_time": 0.055862176,
+        "prompt_tokens_details": null,
+        "queue_time": 6.997414901,
+        "total_time": 0.454189914
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "p07",
+      "status": "completed",
+      "category": "paraphrase",
+      "question": "Bedakan pemeriksaan siapa pengguna dengan pemeriksaan izin pengguna.",
+      "gold_answer": "Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "keamanan.txt",
+          "chunk_index": 2,
+          "score": 2.9192,
+          "content": "Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut."
+        },
+        {
+          "id": 2,
+          "source": "jaringan.txt",
+          "chunk_index": 2,
+          "score": 2.8458,
+          "content": "DNS menerjemahkan nama domain menjadi alamat IP sehingga pengguna tidak perlu mengingat angka alamat server."
+        }
+      ],
+      "answer": "Autentikasi itu **memeriksa siapa pengguna** – yaitu memastikan identitasnya benar (misalnya lewat username + password) 📛. Jadi langkah pertama adalah “siapa kamu?”. [1]\n\nOtorisasi malah **memeriksa izin pengguna** – setelah identitas terkonfirmasi, sistem menentukan sumber daya atau aksi apa yang boleh diakses atau dilakukan oleh pengguna tersebut 🚪. Jadi langkah berikutnya adalah “apa yang boleh kamu lakukan?”. [1]",
+      "finish_reason": "stop",
+      "citation_ids": [
+        1,
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 4331.681599998774,
+      "usage": {
+        "completion_tokens": 223,
+        "prompt_tokens": 851,
+        "total_tokens": 1074,
+        "completion_time": 0.480203903,
+        "completion_tokens_details": {
+          "reasoning_tokens": 115
+        },
+        "prompt_time": 0.044925211,
+        "prompt_tokens_details": null,
+        "queue_time": 3.711732903,
+        "total_time": 0.525129114
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "m04",
+      "status": "completed",
+      "category": "multi_document",
+      "question": "Bandingkan fungsi indeks basis data dengan BM25 pada pencarian.",
+      "gold_answer": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data. BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "basis-data.txt",
+          "chunk_index": 0,
+          "score": 12.6683,
+          "content": "Indeks basis data mempercepat pencarian baris tetapi menambah ruang penyimpanan dan biaya saat penulisan data."
+        },
+        {
+          "id": 2,
+          "source": "rag.txt",
+          "chunk_index": 1,
+          "score": 6.4557,
+          "content": "BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian."
+        },
+        {
+          "id": 3,
+          "source": "jaringan.txt",
+          "chunk_index": 0,
+          "score": 2.4632,
+          "content": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang."
+        }
+      ],
+      "answer": "**Perbandingan fungsi indeks basis data vs. BM25 dalam pencarian** 📚🔎  \n\n| Aspek | Indeks Basis Data | BM25 |\n|-------|-------------------|------|\n| **Tujuan utama** | Mempercepat pencarian baris pada tabel database sehingga data dapat di‑ambil dengan cepat. | Memberi skor relevansi pada dokumen berdasarkan istilah pencarian, sehingga hasil dapat di‑ranking. |\n| **Cara kerja** | Membuat struktur tambahan (mis. B‑tree, hash) yang menunjuk langsung ke lokasi baris yang memenuhi kriteria pencarian. | Menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk menghitung skor pencarian. [2] |\n| **Keuntungan** | Pencarian menjadi jauh lebih cepat dibandingkan scan penuh. | Hasil pencarian lebih relevan karena mempertimbangkan konteks istilah dan panjang dokumen. |\n| **Biaya / Trade‑off** | Menambah ruang penyimpanan dan meningkatkan biaya saat menulis atau memperbarui data karena indeks harus di‑update. [1] | Tidak menambah beban penyimpanan yang signifikan (hanya membutuhkan statistik istilah), tapi memerlukan perhitungan skor pada saat query. |\n| **Kapan dipakai** | Pada aplikasi yang membutuhkan akses data terstruktur cepat, misalnya transaksi bisnis, laporan, atau filter berdasarkan nilai kolom. | Pada sistem informasi pencarian (search engine) atau aplikasi yang mengolah teks tidak terstruktur, di mana relevansi hasil penting. |\n\n**Ringkasnya**: indeks basis data adalah mekanisme struktural untuk meng‑optimalkan *lookup* data terstruktur, sedangkan BM25 adalah algoritma ranking yang menilai seberapa relevan sebuah dokumen dengan query teks. Keduanya mempercepat pencarian, tapi dengan cara dan tujuan yang berbeda. 🎯",
+      "finish_reason": "stop",
+      "citation_ids": [
+        2,
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 7635.382300000856,
+      "usage": {
+        "completion_tokens": 661,
+        "prompt_tokens": 901,
+        "total_tokens": 1562,
+        "completion_time": 1.396359037,
+        "completion_tokens_details": {
+          "reasoning_tokens": 255
+        },
+        "prompt_time": 0.048244002,
+        "prompt_tokens_details": null,
+        "queue_time": 6.094063377,
+        "total_time": 1.444603039
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "m06",
+      "status": "completed",
+      "category": "multi_document",
+      "question": "Jelaskan hubungan panel surya, baterai, dan efisiensi energi.",
+      "gold_answer": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik. Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya. Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "energi.txt",
+          "chunk_index": 1,
+          "score": 11.3414,
+          "content": "Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya."
+        },
+        {
+          "id": 2,
+          "source": "energi.txt",
+          "chunk_index": 0,
+          "score": 8.9031,
+          "content": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik."
+        },
+        {
+          "id": 3,
+          "source": "energi.txt",
+          "chunk_index": 2,
+          "score": 6.4759,
+          "content": "Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen."
+        }
+      ],
+      "answer": "Panel surya mengubah energi cahaya menjadi energi listrik melalui efek fotovoltaik, jadi ia berperan sebagai “pencipta” listrik dari sinar matahari. [2]  \n\nBaterai kemudian menyimpan listrik yang dihasilkan panel surya secara kimia, sehingga ketika cuaca mendung atau malam hari listrik tetap tersedia. [1]  \n\nEfisiensi energi menggambarkan seberapa besar perbandingan antara energi yang keluar berguna dengan energi yang masuk, biasanya dalam persen. [3]  \n\nHubungannya, semakin tinggi efisiensi panel surya, semakin banyak energi cahaya yang berhasil diubah menjadi listrik; dan semakin efisien baterai dalam menyimpan serta mengeluarkan energi kimia, semakin sedikit energi yang hilang selama penyimpanan. Kombinasi keduanya menentukan seberapa efektif sistem tenaga surya‑baterai dalam menyediakan listrik yang dapat dipakai. 🌞🔋✨",
+      "finish_reason": "stop",
+      "citation_ids": [
+        2,
+        1,
+        3
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 3377.742800001215,
+      "usage": {
+        "completion_tokens": 437,
+        "prompt_tokens": 888,
+        "total_tokens": 1325,
+        "completion_time": 0.932284874,
+        "completion_tokens_details": {
+          "reasoning_tokens": 236
+        },
+        "prompt_time": 0.045073791,
+        "prompt_tokens_details": null,
+        "queue_time": 2.306664166,
+        "total_time": 0.977358665
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "m07",
+      "status": "completed",
+      "category": "multi_document",
+      "question": "Bedakan hash, enkripsi, dan pemeriksaan identitas.",
+      "gold_answer": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal. Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli. Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "keamanan.txt",
+          "chunk_index": 2,
+          "score": 4.7683,
+          "content": "Autentikasi memeriksa identitas pengguna, sedangkan otorisasi menentukan sumber daya yang boleh diakses identitas tersebut."
+        },
+        {
+          "id": 2,
+          "source": "keamanan.txt",
+          "chunk_index": 0,
+          "score": 4.5318,
+          "content": "Hash adalah sidik jari satu arah untuk memeriksa integritas data. Nilai hash tidak dirancang untuk dikembalikan menjadi pesan asal."
+        },
+        {
+          "id": 3,
+          "source": "keamanan.txt",
+          "chunk_index": 1,
+          "score": 3.8332,
+          "content": "Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli."
+        }
+      ],
+      "answer": "Berikut perbedaan utama antara **hash**, **enkripsi**, dan **pemeriksaan identitas (autentikasi)**:\n\n**1. Hash**  \n- Menghasilkan sidik jari satu arah yang unik untuk data — nilai hash tidak dapat dikembalikan menjadi pesan asal. [2]  \n- Digunakan untuk memeriksa integritas data; kalau nilai hash berubah, berarti data sudah dimodifikasi.  \n\n**2. Enkripsi**  \n- Mengubah pesan menjadi ciphertext yang tidak dapat dibaca tanpa kunci. [3]  \n- Dengan kunci yang tepat, ciphertext dapat didekripsi kembali menjadi pesan asli, jadi prosesnya bersifat dua‑arah.  \n\n**3. Pemeriksaan Identitas (Autentikasi)**  \n- Memeriksa siapa pengguna itu sebenarnya, memastikan bahwa mereka memang orang yang mereka klaim. [1]  \n- Berbeda dengan otorisasi yang menentukan apa yang boleh diakses setelah identitas terverifikasi.  \n\n**Ringkasnya**  \n- *Hash* = jejak satu arah untuk memeriksa integritas.  \n- *Enkripsi* = mengacak data yang dapat dibuka kembali dengan kunci.  \n- *Autentikasi* = menegaskan identitas pengguna sebelum memberi akses.  \n\nSemoga membantu! 🚀 Jika ada bagian yang masih bingung, beri tahu ya, kita pecah jadi lebih kecil.",
+      "finish_reason": "stop",
+      "citation_ids": [
+        2,
+        3,
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 7693.266500000391,
+      "usage": {
+        "completion_tokens": 490,
+        "prompt_tokens": 901,
+        "total_tokens": 1391,
+        "completion_time": 1.040591617,
+        "completion_tokens_details": {
+          "reasoning_tokens": 192
+        },
+        "prompt_time": 0.052490987,
+        "prompt_tokens_details": null,
+        "queue_time": 6.504457025,
+        "total_time": 1.093082604
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "f04",
+      "status": "completed",
+      "category": "follow_up",
+      "question": "Apa peran retrieval sebelum generator menjawab? Mengapa tahap itu dilakukan dulu?",
+      "gold_answer": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "rag.txt",
+          "chunk_index": 0,
+          "score": 11.1866,
+          "content": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks."
+        },
+        {
+          "id": 2,
+          "source": "belajar.txt",
+          "chunk_index": 0,
+          "score": 3.4475,
+          "content": "Latihan mengingat meminta siswa menjawab tanpa melihat catatan dahulu, kemudian memeriksa kesalahan dengan materi sumber."
+        }
+      ],
+      "answer": "Retrieval berfungsi mengambil potongan‑potongan dokumen yang relevan dulu, baru kemudian generator menyusun jawaban berdasarkan konteks yang sudah dipilih. [1]  \n\nTahap ini dilakukan dulu karena:  \n\n- 📚 Ia memberi **konteks yang tepat** ke generator, jadi jawaban yang dihasilkan lebih akurat dan sesuai dengan informasi yang ada.  \n- 🔍 Dengan adanya konteks, risiko *hallucination* (jawaban yang dibuat‑bual) berkurang karena generator “mengetahui” apa yang harus dibicarakan.  \n- ⚡ Proses ini juga mempercepat pencarian informasi yang relevan, sehingga jawaban tidak harus “menebak‑tebak” dari pengetahuan umum semata.  \n\nJadi, retrieval adalah langkah penting untuk memastikan generator bekerja dengan data yang relevan dan menghasilkan respons yang lebih tepat serta dapat dipertanggungjawabkan. 😊",
+      "finish_reason": "stop",
+      "citation_ids": [
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 7884.303200000431,
+      "usage": {
+        "completion_tokens": 361,
+        "prompt_tokens": 853,
+        "total_tokens": 1214,
+        "completion_time": 0.76001645,
+        "completion_tokens_details": {
+          "reasoning_tokens": 161
+        },
+        "prompt_time": 0.059847903,
+        "prompt_tokens_details": null,
+        "queue_time": 6.966904571,
+        "total_time": 0.819864353
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n04",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Berapa kapasitas baterai dalam ampere jam pada proyek ini?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "energi.txt",
+          "chunk_index": 1,
+          "score": 3.5365,
+          "content": "Baterai menyimpan energi secara kimia dan menyediakan listrik saat panel surya tidak menghasilkan daya."
+        },
+        {
+          "id": 2,
+          "source": "belajar.txt",
+          "chunk_index": 1,
+          "score": 3.2824,
+          "content": "Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi."
+        },
+        {
+          "id": 3,
+          "source": "keuangan.txt",
+          "chunk_index": 2,
+          "score": 2.8458,
+          "content": "Titik impas tercapai ketika total pendapatan sama dengan total biaya; pada titik itu proyek belum memperoleh laba."
+        }
+      ],
+      "answer": "Maaf, informasi tentang kapasitas baterai dalam ampere‑jam tidak ada dalam materi yang diberikan. 🤔 Jika ada data lain yang bisa kamu bagikan, saya akan bantu menghitungnya!",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 2306.1812999985705,
+      "usage": {
+        "completion_tokens": 177,
+        "prompt_tokens": 903,
+        "total_tokens": 1080,
+        "completion_time": 0.376747555,
+        "completion_tokens_details": {
+          "reasoning_tokens": 128
+        },
+        "prompt_time": 0.045991884,
+        "prompt_tokens_details": null,
+        "queue_time": 1.788898374,
+        "total_time": 0.422739439
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n05",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Apa kunci enkripsi yang digunakan server kampus?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "keamanan.txt",
+          "chunk_index": 1,
+          "score": 7.6663,
+          "content": "Enkripsi mengubah pesan menjadi ciphertext dan memakai kunci untuk mengembalikan pesan asli."
+        },
+        {
+          "id": 2,
+          "source": "jaringan.txt",
+          "chunk_index": 2,
+          "score": 3.4475,
+          "content": "DNS menerjemahkan nama domain menjadi alamat IP sehingga pengguna tidak perlu mengingat angka alamat server."
+        }
+      ],
+      "answer": "Maaf, materi yang ada tidak menyebutkan detail tentang **kunci enkripsi yang dipakai server kampus**. Jadi saya belum bisa memberikan jawabannya. Kalau ada topik lain tentang enkripsi atau jaringan yang ingin dipelajari, beri tahu ya! 😊",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 2331.4910999997664,
+      "usage": {
+        "completion_tokens": 197,
+        "prompt_tokens": 842,
+        "total_tokens": 1039,
+        "completion_time": 0.413622001,
+        "completion_tokens_details": {
+          "reasoning_tokens": 134
+        },
+        "prompt_time": 0.048366383,
+        "prompt_tokens_details": null,
+        "queue_time": 1.769660646,
+        "total_time": 0.461988384
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n06",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Siapa penemu algoritme BM25 dan kapan lahirnya?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "rag.txt",
+          "chunk_index": 1,
+          "score": 3.5365,
+          "content": "BM25 menggabungkan frekuensi istilah, kelangkaan istilah pada korpus, dan normalisasi panjang dokumen untuk memberi skor pencarian."
+        }
+      ],
+      "answer": "Maaf, informasi tentang penemu algoritme BM25 dan tanggal lahirnya tidak terdapat dalam materi yang diberikan.",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 1332.2307000016735,
+      "usage": {
+        "completion_tokens": 405,
+        "prompt_tokens": 821,
+        "total_tokens": 1226,
+        "completion_time": 0.854744338,
+        "completion_tokens_details": {
+          "reasoning_tokens": 373
+        },
+        "prompt_time": 0.04175542,
+        "prompt_tokens_details": null,
+        "queue_time": 0.343270025,
+        "total_time": 0.896499758
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n07",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Berapa jumlah kloroplas pada tanaman contoh?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "biologi.txt",
+          "chunk_index": 1,
+          "score": 4.0603,
+          "content": "Klorofil menyerap energi cahaya dan berada di kloroplas pada sel tumbuhan."
+        }
+      ],
+      "answer": "Maaf, materi yang ada tidak menyebutkan berapa jumlah kloroplas pada tanaman contoh. [1]\n\n**Pengetahuan tambahan**  \nSecara umum, sel tumbuhan biasanya memiliki beberapa kloroplas—banyaknya dapat bervariasi tergantung jenis sel, umur tanaman, dan kondisi lingkungan. 🌱",
+      "finish_reason": "stop",
+      "citation_ids": [
+        1
+      ],
+      "citation_ids_valid": true,
+      "latency_ms": 1455.7009000000107,
+      "usage": {
+        "completion_tokens": 324,
+        "prompt_tokens": 805,
+        "total_tokens": 1129,
+        "completion_time": 0.684936612,
+        "completion_tokens_details": {
+          "reasoning_tokens": 249
+        },
+        "prompt_time": 0.049364245,
+        "prompt_tokens_details": null,
+        "queue_time": 0.628398668,
+        "total_time": 0.734300857
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n08",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Berapa lama jadwal spaced repetition yang optimal untuk semua siswa?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "belajar.txt",
+          "chunk_index": 1,
+          "score": 9.8471,
+          "content": "Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi."
+        },
+        {
+          "id": 2,
+          "source": "arsip.txt",
+          "chunk_index": 0,
+          "score": 4.7222,
+          "content": "Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan jadwal pameran seni. Arsip rapat membahas warna poster, kursi aula, dan "
+        }
+      ],
+      "answer": "Maaf, materi yang ada hanya menjelaskan bahwa spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, tanpa menyebutkan berapa lama interval yang optimal untuk semua siswa. Jadi jawabannya belum cukup didukung oleh sumber yang diberikan. 🙏",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 1085.9564999991562,
+      "usage": {
+        "completion_tokens": 311,
+        "prompt_tokens": 1129,
+        "total_tokens": 1440,
+        "completion_time": 0.670396314,
+        "completion_tokens_details": {
+          "reasoning_tokens": 245
+        },
+        "prompt_time": 0.264359951,
+        "prompt_tokens_details": null,
+        "queue_time": 0.052793296,
+        "total_time": 0.934756265
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n09",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Apa port TCP yang dipakai aplikasi dalam materi?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "belajar.txt",
+          "chunk_index": 1,
+          "score": 5.9919,
+          "content": "Spaced repetition menjadwalkan pengulangan materi pada interval waktu yang terpisah, alih-alih menumpuk semua pengulangan dalam satu sesi."
+        },
+        {
+          "id": 2,
+          "source": "jaringan.txt",
+          "chunk_index": 0,
+          "score": 3.9434,
+          "content": "TCP memberikan pengiriman data berurutan dan mengirim ulang paket yang hilang."
+        },
+        {
+          "id": 3,
+          "source": "biologi.txt",
+          "chunk_index": 2,
+          "score": 3.7289,
+          "content": "Respirasi sel memecah gula untuk menyediakan energi yang dapat dipakai sel, termasuk pada tumbuhan."
+        }
+      ],
+      "answer": "Hai! Dari materi yang ada, tidak disebutkan port TCP spesifik yang dipakai aplikasi tersebut. Jadi informasinya belum tersedia di sumber yang diberikan. 😊 Jika ada hal lain yang ingin kamu gali, beri tahu ya!",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 9335.91130000059,
+      "usage": {
+        "completion_tokens": 237,
+        "prompt_tokens": 895,
+        "total_tokens": 1132,
+        "completion_time": 0.498842981,
+        "completion_tokens_details": {
+          "reasoning_tokens": 183
+        },
+        "prompt_time": 0.06799839,
+        "prompt_tokens_details": null,
+        "queue_time": 0.397333257,
+        "total_time": 0.566841371
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    },
+    {
+      "id": "n10",
+      "status": "completed",
+      "category": "no_answer",
+      "question": "Berapa persen laba proyek berdasarkan laporan terakhir?",
+      "gold_answer": "Materi tidak menyediakan jawaban.",
+      "sources": [
+        {
+          "id": 1,
+          "source": "keuangan.txt",
+          "chunk_index": 2,
+          "score": 5.6916,
+          "content": "Titik impas tercapai ketika total pendapatan sama dengan total biaya; pada titik itu proyek belum memperoleh laba."
+        },
+        {
+          "id": 2,
+          "source": "energi.txt",
+          "chunk_index": 2,
+          "score": 3.7289,
+          "content": "Efisiensi adalah perbandingan energi keluaran berguna terhadap energi masukan, biasanya dinyatakan sebagai persen."
+        },
+        {
+          "id": 3,
+          "source": "rag.txt",
+          "chunk_index": 0,
+          "score": 3.078,
+          "content": "Retrieval mengambil potongan dokumen yang relevan sebelum generator menyusun jawaban berdasarkan konteks."
+        }
+      ],
+      "answer": "Maaf, dari materi yang ada tidak ada data tentang total pendapatan, total biaya, atau persentase laba proyek yang dapat dihitung 🚫. Jadi belum cukup informasi untuk menentukan berapa persen laba proyek berdasarkan laporan terakhir. Jika ada angka-angka spesifiknya, saya bisa bantu menghitungnya! 🌟",
+      "finish_reason": "stop",
+      "citation_ids": [],
+      "citation_ids_valid": true,
+      "latency_ms": 8258.155700001225,
+      "usage": {
+        "completion_tokens": 175,
+        "prompt_tokens": 888,
+        "total_tokens": 1063,
+        "completion_time": 0.364548765,
+        "completion_tokens_details": {
+          "reasoning_tokens": 101
+        },
+        "prompt_time": 0.120659971,
+        "prompt_tokens_details": null,
+        "queue_time": 0.476165292,
+        "total_time": 0.485208736
+      },
+      "manual_claim_support": null,
+      "manual_abstention": null
+    }
+  ]
+}
