@@ -1,5 +1,5 @@
 
 # Evaluation artifacts are byte-preserved because manifests record SHA-256.
-docs/evaluation/** -text
+docs/evaluation/** -text whitespace=cr-at-eol
 # Source snapshots preserve original whitespace for reproducibility.
-docs/evaluation/**/source/** whitespace=-blank-at-eol,-blank-at-eof
+docs/evaluation/**/source/** whitespace=cr-at-eol,-blank-at-eol,-blank-at-eof
