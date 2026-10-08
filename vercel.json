@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "fastapi",
+  "functions": {"main.py": {"maxDuration": 300}},
+  "env": {
+    "SESSION_BACKEND": "supabase",
+    "RETRIEVAL_METHOD": "bm25",
+    "DEMO_REQUESTS_PER_MINUTE": "10",
+    "DEMO_REQUESTS_PER_DAY": "100",
+    "MAX_UPLOAD_BYTES": "1048576",
+    "ALLOWED_ORIGINS": "https://scholarbot-ai-demo.pages.dev"
+  }
+}

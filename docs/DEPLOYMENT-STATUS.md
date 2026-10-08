@@ -1,32 +1,25 @@
 # Status deployment — 8 Oktober 2026
 
-Target: demo portofolio Cloudflare Pages Free + Render Free Web Service + Groq Free. Paket berbayar tidak dipilih.
+Target aktif: Cloudflare Pages Free + Vercel Hobby + Supabase Free + Groq.
+Render dibatalkan karena akun meminta billing; alwaysdata ditunda sesuai pilihan pengguna.
 
-## Hasil aktual
+## Selesai
 
-- GitHub dan Cloudflare OAuth masih terhubung.
-- Akun Render dapat diakses, tetapi daftar services kosong.
-- Pembuatan `scholarbot-demo-api` dengan `--plan free` ditolak HTTP 402: payment information required. Backend tidak dibuat, dan belum ada URL API publik yang dapat diuji.
-- Landing holding sebelumnya: https://scholarbot-ai-demo.pages.dev/ . Ini bukan bukti live demo AI; status belum siap harus tetap terlihat sampai backend aktif.
-- Build lokal landing + workspace tersedia pada http://127.0.0.1:4175/ dan `/app/`; backend lokal pada port 8000. Endpoint health dan aset sudah diverifikasi lokal pada sesi sebelumnya.
+- Vercel CLI login sebagai loxleyftsck; scope loxleyftscks-projects terdeteksi Hobby.
+- Proyek scholarbot-demo-api dibuat, repository GitHub dihubungkan, build FastAPI berhasil.
+- URL API: https://scholarbot-demo-api.vercel.app . Build sukses bukan berarti live demo AI siap.
+- GROQ_API_KEY tersimpan sebagai sensitive secret production setelah izin eksplisit pengguna.
+- Konfigurasi serverless membaca sesi dari Supabase, menyimpan revisi, dan memakai kuota database atomik.
+- 149 tes API/core/RAG/kuota/storage lolos. Tes shared store memakai mock; RPC SQL belum diuji di server.
+- Frontend holding tetap https://scholarbot-ai-demo.pages.dev/ . Full workspace belum dipublikasikan ulang.
 
-## Persiapan yang selesai
+## Belum selesai
 
-- Batas global 10 request/menit serta 100 request/24 jam bergulir pada satu worker untuk seluruh POST dan GET `/api/quiz`.
-- GET health/session tidak ikut diblokir ketika kuota demo habis.
-- Retry-After dan CORS pada respons 429 tetap dapat dibaca frontend.
-- BM25 dipilih eksplisit dalam konfigurasi Render, tanpa model embedding lokal.
-- 143 tes backend/core relevan lolos; tiga suite UI Streamlit tidak dijalankan karena dependency tidak tersedia.
-- `.env`, data sesi, OAuth credentials, bobot model, dan environment lokal tidak diikutkan Git.
+- Supabase CLI belum login. Login GitHub di Brave tidak otomatis menghubungkan CLI/browser in-app.
+- SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi di Vercel.
+- Schema SQL belum dijalankan pada project demo Free.
+- Health publik terverifikasi 503: Penyimpanan demo belum dikonfigurasi.
+- Upload/chat/RAG/sitasi/kuis/mind map serta kuota publik belum diuji.
 
-Kuota ini ada di memori dan reset ketika proses restart. Ini bukan jaminan batas token provider atau proteksi penyalahgunaan yang lengkap.
-
-## Langkah yang menunggu pemilik akun
-
-Pemilik akun memilih apakah bersedia menyelesaikan verifikasi Render di https://dashboard.render.com/billing. Informasi kartu hanya dimasukkan pada dashboard penyedia. Jika tetap tanpa kartu, backend membutuhkan penyedia alternatif yang lolos pemeriksaan paket/akses akun; jangan menganggap deploy Render berhasil atau beralih diam-diam ke layanan berbayar.
-
-Setelah backend tersedia: masukkan secret Groq di backend, set origin Pages yang sebenarnya, deploy backend dari branch ini, bangun frontend menggunakan URL API HTTPS yang diberikan Render, lalu verifikasi chat, upload, sumber, kuis, mind map, routing `/app/`, kuota dan cold start melalui URL publik.
-
-## Pemulihan
-
-Jika health atau alur utama gagal, jangan publikasikan build aplikasi sebagai live demo. Pertahankan landing holding, periksa log backend tanpa mencetak secret, dan rollback frontend ke deployment holding sebelumnya bila diperlukan. Jangan menggunakan ping berkala untuk menghindari sleep paket gratis.
+Panduan dan langkah berikutnya: [Vercel](DEPLOY-VERCEL.md).
+Pertahankan landing holding hingga backend dan alur utama siap. Tidak ada paket berbayar dipilih.

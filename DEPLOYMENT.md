@@ -1,4 +1,10 @@
-# Live demo gratis: Cloudflare Pages + Render
+# Deployment live demo
+
+Pilihan aktif: **Cloudflare Pages + Vercel Hobby + Supabase Free + Groq**.
+Panduan terbaru: [deploy Vercel](docs/DEPLOY-VERCEL.md).
+Backend berhasil dibangun, tetapi live demo masih menunggu konfigurasi Supabase dan pengujian publik.
+
+## Opsi sebelumnya: Cloudflare Pages + Render
 
 Landing ada di `/`, workspace React di `/app/`, dan FastAPI di Render.
 Jangan unggah `.env` atau memasukkan GROQ_API_KEY sebagai variabel Vite: semua variabel Vite dapat dibaca pengunjung.

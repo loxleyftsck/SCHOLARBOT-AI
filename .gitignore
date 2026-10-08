@@ -31,3 +31,7 @@ dist-demo/
 # Python caches in evaluation scripts and nested packages
 __pycache__/
 *.py[cod]
+
+# Vercel local project metadata
+.vercel/
+.vercel

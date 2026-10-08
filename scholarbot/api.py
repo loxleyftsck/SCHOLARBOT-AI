@@ -46,6 +46,8 @@ from services.chunker import chunk_text
 from services.retriever import RetrievedChunk, select_context_chunks
 from services.semantic_search import hybrid_retrieve as retrieve
 from storage.json_store import load_session, save_session
+from storage import shared_store
+from starlette.concurrency import run_in_threadpool
 
 # Initialize FastAPI App
 app = FastAPI(
@@ -76,38 +78,54 @@ app.add_middleware(
     expose_headers=["X-RAG-Sources", "X-Retrieval-Status", "Retry-After"],
 )
 
-# A shared demo quota across all visitors (single-worker deployment).
+# Vercel must use shared state, never instance-local files or request counters.
+SESSION_BACKEND = os.getenv("SESSION_BACKEND", "supabase" if os.getenv("VERCEL") else "local")
+if os.getenv("VERCEL") and SESSION_BACKEND != "supabase":
+    raise RuntimeError("Vercel requires shared session storage.")
+SHARED_STORAGE = SESSION_BACKEND == "supabase"
+
+# Local single-worker quota; shared deployments use an atomic database RPC.
 DEMO_REQUESTS_PER_MINUTE = int(os.getenv("DEMO_REQUESTS_PER_MINUTE", "0"))
 DEMO_REQUESTS_PER_DAY = int(os.getenv("DEMO_REQUESTS_PER_DAY", "0"))
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", "5242880"))
 DEMO_REQUEST_TIMES = deque()
 DEMO_DAILY_REQUEST_TIMES = deque()
 
+def demo_error_response(request, status, detail, retry_after=None):
+    headers = {"Retry-After": str(retry_after)} if retry_after else {}
+    response = JSONResponse(status_code=status, content={"detail": detail}, headers=headers)
+    origin = request.headers.get("origin")
+    if origin in allowed_origins:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "Retry-After"
+        response.headers["Vary"] = "Origin"
+    return response
+
 @app.middleware("http")
 async def limit_demo_requests(request, call_next):
     limited = request.method == "POST" or (request.method == "GET" and request.url.path == "/api/quiz")
     if limited and (DEMO_REQUESTS_PER_MINUTE > 0 or DEMO_REQUESTS_PER_DAY > 0):
-        now = time.monotonic()
-        for queue, window in ((DEMO_REQUEST_TIMES, 60), (DEMO_DAILY_REQUEST_TIMES, 86400)):
-            while queue and now - queue[0] >= window:
-                queue.popleft()
         retry_after = 0
-        for queue, window, limit in ((DEMO_REQUEST_TIMES, 60, DEMO_REQUESTS_PER_MINUTE), (DEMO_DAILY_REQUEST_TIMES, 86400, DEMO_REQUESTS_PER_DAY)):
-            if limit > 0 and len(queue) >= limit:
-                retry_after = max(retry_after, max(1, math.ceil(window - (now - queue[0]))))
+        if SHARED_STORAGE:
+            try:
+                retry_after = await run_in_threadpool(shared_store.quota, DEMO_REQUESTS_PER_MINUTE, DEMO_REQUESTS_PER_DAY)
+            except HTTPException as exc:
+                return demo_error_response(request, exc.status_code, exc.detail)
+        else:
+            now = time.monotonic()
+            for queue, window in ((DEMO_REQUEST_TIMES, 60), (DEMO_DAILY_REQUEST_TIMES, 86400)):
+                while queue and now - queue[0] >= window:
+                    queue.popleft()
+            for queue, window, limit in ((DEMO_REQUEST_TIMES, 60, DEMO_REQUESTS_PER_MINUTE), (DEMO_DAILY_REQUEST_TIMES, 86400, DEMO_REQUESTS_PER_DAY)):
+                if limit > 0 and len(queue) >= limit:
+                    retry_after = max(retry_after, max(1, math.ceil(window - (now - queue[0]))))
         if retry_after:
             detail = "Kuota demo hari ini habis. Coba lagi nanti." if retry_after > 60 else "Demo sedang ramai. Coba lagi dalam satu menit."
-            response = JSONResponse(status_code=429, content={"detail": detail}, headers={"Retry-After": str(retry_after)})
-            origin = request.headers.get("origin")
-            if origin in allowed_origins:
-                response.headers["Access-Control-Allow-Origin"] = origin
-                response.headers["Access-Control-Allow-Credentials"] = "true"
-                response.headers["Access-Control-Expose-Headers"] = "Retry-After"
-                response.headers["Vary"] = "Origin"
-            return response
-        if DEMO_REQUESTS_PER_MINUTE > 0:
+            return demo_error_response(request, 429, detail, retry_after)
+        if not SHARED_STORAGE and DEMO_REQUESTS_PER_MINUTE > 0:
             DEMO_REQUEST_TIMES.append(now)
-        if DEMO_REQUESTS_PER_DAY > 0:
+        if not SHARED_STORAGE and DEMO_REQUESTS_PER_DAY > 0:
             DEMO_DAILY_REQUEST_TIMES.append(now)
     return await call_next(request)
 
@@ -124,6 +142,7 @@ class SessionState:
         self.doc_chunks: List[Any] = []
         self.quiz_scores: List[Dict[str, Any]] = []  # track scores history
         self.created_at: datetime = datetime.now()
+        self.revision: int = 0
 
 SESSIONS: Dict[str, SessionState] = {}
 
@@ -133,6 +152,23 @@ def get_or_create_session(session_id: Optional[str]) -> tuple[str, SessionState]
     if not session_id or session_id.strip() == "":
         session_id = str(uuid.uuid4())
     
+    if len(session_id) > 128:
+        raise HTTPException(400, "ID sesi tidak valid.")
+    if SHARED_STORAGE:
+        # Always read authoritative storage; do not reuse an instance's cached state.
+        saved = shared_store.load(session_id)
+        state = SessionState()
+        if saved:
+            payload = saved["payload"]
+            for field in ("messages", "topics_discussed", "uploaded_docs", "quiz_scores",
+                          "current_context", "active_mode", "last_question", "last_answer"):
+                if field in payload:
+                    setattr(state, field, payload[field])
+            from services.chunker import Chunk
+            state.doc_chunks = [Chunk(**c) for c in payload.get("doc_chunks", [])]
+            state.revision = saved["revision"]
+        return session_id, state
+
     if session_id not in SESSIONS:
         # Try to load from disk JSON storage
         saved = load_session(session_id)
@@ -151,6 +187,19 @@ def get_or_create_session(session_id: Optional[str]) -> tuple[str, SessionState]
 
 def persist_session(session_id: str, state: SessionState):
     """Persist session details to disk safely."""
+    if SHARED_STORAGE:
+        from dataclasses import asdict
+        payload = {field: getattr(state, field) for field in (
+            "messages", "topics_discussed", "uploaded_docs", "quiz_scores", "current_context",
+            "active_mode", "last_question", "last_answer")}
+        payload["messages"] = payload["messages"][-60:]
+        payload["quiz_scores"] = payload["quiz_scores"][-100:]
+        payload["topics_discussed"] = payload["topics_discussed"][-50:]
+        payload["doc_chunks"] = [asdict(c) if hasattr(c, "content") else c for c in state.doc_chunks]
+        if len(json.dumps(payload).encode("utf-8")) > 2000000:
+            raise HTTPException(413, "Sesi demo terlalu besar. Hapus dokumen atau mulai sesi baru.")
+        state.revision = shared_store.save(session_id, payload, state.revision)
+        return
     try:
         state_dict = {
             "messages": state.messages,
@@ -204,10 +253,13 @@ class MindMapExpandRequest(BaseModel):
 @app.get("/api/health")
 async def health_check():
     """Health check endpoint."""
+    if SHARED_STORAGE:
+        shared_store.load("__healthcheck__")
     return {
         "status": "healthy",
         "timestamp": datetime.now().isoformat(),
-        "groq_configured": bool(os.getenv("GROQ_API_KEY"))
+        "groq_configured": bool(os.getenv("GROQ_API_KEY")),
+        "session_backend": SESSION_BACKEND
     }
 
 
@@ -217,6 +269,8 @@ async def chat_endpoint(req: ChatRequest):
     session_id, state = get_or_create_session(req.session_id)
     user_msg = req.message.strip()
 
+    if SHARED_STORAGE and len(user_msg) > 8000:
+        raise HTTPException(413, "Pesan demo maksimal 8000 karakter.")
     if not user_msg:
         raise HTTPException(status_code=400, detail="Pesan tidak boleh kosong")
 
@@ -356,6 +410,9 @@ async def chat_endpoint(req: ChatRequest):
 
             persist_session(session_id, state)
 
+        except HTTPException:
+            yield "\n\n[Sesi belum tersimpan. Muat ulang sebelum mengirim ulang pesan.]"
+            return
         except Exception as e:
             err_msg = f"\nError streaming response: {str(e)}"
             # If an error happens mid-stream, save a valid assistant message to history to keep roles alternating (BUG-01)
@@ -389,6 +446,8 @@ async def upload_document(
     """RAG Document Upload Endpoint."""
     session_id, state = get_or_create_session(session_id)
     
+    if SHARED_STORAGE and len(state.uploaded_docs) >= 5:
+        raise HTTPException(413, "Demo maksimal 5 dokumen per sesi. Hapus dokumen terlebih dahulu.")
     file_extension = os.path.splitext(file.filename)[1].lower()
     if file_extension not in (".txt", ".pdf"):
         raise HTTPException(status_code=400, detail="Hanya mendukung file .txt atau .pdf")
@@ -408,6 +467,8 @@ async def upload_document(
         if not raw_text.strip():
             raise HTTPException(status_code=400, detail="File kosong atau tidak dapat diekstrak")
 
+        if SHARED_STORAGE and len(raw_text) > 100000:
+            raise HTTPException(413, "Teks hasil ekstraksi maksimal 100000 karakter untuk demo.")
         # Chunk the extracted text
         new_chunks = chunk_text(raw_text, filename=file.filename)
         
